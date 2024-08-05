@@ -5,18 +5,24 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from filters.chat_types import ChatTypeFilter
+from keyboards.inline.inline import get_callback_btns
+from lexicon.lexicon import LEXICON_btn_questions
+
 
 user_private_router = Router()
 user_private_router.message.filter(ChatTypeFilter(['private']))
 
 
 
-@user_private_router.message(F.text.lower().in_({'старт', 'начать', "start"}))
+@user_private_router.message(F.text.lower().in_({'вопросы', 'вопрос', "questions"}))
 @user_private_router.message(CommandStart())
+@user_private_router.message(Command('questions'))
 
 async def start_cmd(message: types.Message):
-    await message.answer(text="Привет")
+    await message.answer(text="Спасибо за интерес к курсам Mindspa! Пожалуйста, выберите свой вопрос в списке ниже:",
+                                  reply_markup=get_callback_btns(btns=LEXICON_btn_questions, sizes=(1,)))
 
+    await message.delete()
 
 
 
