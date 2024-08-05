@@ -3,3 +3,5 @@ LEXICON_COMMANDS: dict[str, str] = {
     '/admin': 'АДМИНКА',
     '/help': 'ПОМОЩЬ',
 }
+
+#kfas;ldkjf;alskdf;laskd
