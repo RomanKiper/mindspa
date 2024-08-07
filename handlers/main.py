@@ -6,23 +6,44 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from filters.chat_types import ChatTypeFilter
 from keyboards.inline.inline import get_callback_btns
-from lexicon.lexicon import LEXICON_btn_questions
+from lexicon.lexicon import LEXICON_btn_questions, LEXICON_RU, LEXICON_btn_answer_questions
 
 
 user_private_router = Router()
 user_private_router.message.filter(ChatTypeFilter(['private']))
+# user_private_router.callback_query.filter(ChatTypeFilter(['private']))
 
 
 
 @user_private_router.message(F.text.lower().in_({'вопросы', 'вопрос', "questions"}))
 @user_private_router.message(CommandStart())
 @user_private_router.message(Command('questions'))
+@user_private_router.callback_query(F.data == 'main_list_questions')
 
-async def start_cmd(message: types.Message):
-    await message.answer(text="Спасибо за интерес к курсам Mindspa! Пожалуйста, выберите свой вопрос в списке ниже:",
-                                  reply_markup=get_callback_btns(btns=LEXICON_btn_questions, sizes=(1,)))
+async def start_cmd(message_or_callback: types.Union[types.Message, CallbackQuery], session: AsyncSession):
+    if isinstance(message_or_callback, types.Message):
+        message = message_or_callback
+        await message.answer(text=LEXICON_RU["/question_list"],
+                                      reply_markup=get_callback_btns(btns=LEXICON_btn_questions, sizes=(1,)))
+        await message.delete()
 
-    await message.delete()
+    elif isinstance(message_or_callback, types.CallbackQuery):
+        callback = message_or_callback
+        await callback.message.answer(text=LEXICON_RU["/question_list"],
+                                      reply_markup=get_callback_btns(btns=LEXICON_btn_questions, sizes=(1,)))
+        await callback.message.delete()
+
+# async def start_cmd(message: types.Message):
+#     await message.answer(text=LEXICON_RU["/question_list"],
+#                                   reply_markup=get_callback_btns(btns=LEXICON_btn_questions, sizes=(1,)))
+#     await message.delete()
+
+
+@user_private_router.callback_query(F.data == 'help_with_course')
+async def get_help_with_questions(callback: types.CallbackQuery):
+    await callback.message.answer(text=LEXICON_RU["/help_with_course"],
+                                  reply_markup=get_callback_btns(btns=LEXICON_btn_answer_questions, sizes=(1,)))
+    await callback.message.delete()
 
 
 
