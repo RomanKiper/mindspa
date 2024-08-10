@@ -8,6 +8,10 @@ from filters.chat_types import ChatTypeFilter
 from keyboards.inline.inline import get_callback_btns
 from lexicon.lexicon import LEXICON_btn_questions, LEXICON_RU, LEXICON_btn_answer_questions
 
+from aiogram.filters import Command, StateFilter, or_f
+from aiogram.fsm.state import StatesGroup, State
+from aiogram.fsm.context import FSMContext
+
 
 user_private_router = Router()
 user_private_router.message.filter(ChatTypeFilter(['private']))
@@ -44,6 +48,118 @@ async def get_help_with_questions(callback: types.CallbackQuery):
     await callback.message.answer(text=LEXICON_RU["/help_with_course"],
                                   reply_markup=get_callback_btns(btns=LEXICON_btn_answer_questions, sizes=(1,)))
     await callback.message.delete()
+
+
+###########################################
+
+class AddRequestCourse(StatesGroup):
+    # Шаги состояний
+    question1 = State()
+    question2 = State()
+    question3 = State()
+    contact_information = State()
+
+    product_for_change = None
+
+
+
+    texts = {
+        'AddRequestCourse:question1': 'Ответьте на вопрос №1 - "Проблема, которую я хочу решить - ...", заново.',
+        'AddRequestCourse:question2': 'Ответьте на вопрос №2 - "Моя проблема выражается в....", заново.',
+        'AddRequestCourse:question3': 'Ответьте на вопрос №3 - "ПРезультат, которого я хочу достичь — ...", заново.',
+
+        'AddProduct:image': 'Этот стейт последний, поэтому...',
+    }
+
+    # Вернутся на шаг назад (на прошлое состояние)
+    # Прописано для двух машин состояний: из make_offer и add_product
+    @user_private_router.message(StateFilter("*"), Command("назад"))
+    @user_private_router.message(StateFilter("*"), F.text.casefold() == "назад")
+    async def back_step_handler(message: types.Message, state: FSMContext) -> None:
+        current_state = await state.get_state()
+
+        if current_state in (
+        AddRequestCourse.question1):
+            await message.answer(
+                'Предидущего шага нет, или введите название или напишите "отмена"'
+            )
+            return
+
+        elif current_state == AddNote.description:
+            await state.set_state(AddNote.name)
+            await message.answer(
+                f"Ок, вы вернулись к прошлому шагу \n {AddNote.texts[AddNote.name]}"
+            )
+            return
+
+        elif current_state == Add_price.price:
+            await state.set_state(Add_price.name)
+            await message.answer(
+                f"Ок, вы вернулись к прошлому шагу \n {Add_price.texts[Add_price.name]}"
+            )
+            return
+
+        elif current_state == Add_document.document:
+            await state.set_state(Add_document.name)
+            await message.answer(
+                f"Ок, вы вернулись к прошлому шагу \n {Add_document.texts[Add_document.name]}"
+            )
+            return
+
+        elif current_state == AddOffer.description:
+            await state.set_state(AddOffer.name)
+            await message.answer(
+                f"Ок, вы вернулись к прошлому шагу \n {AddOffer.texts[AddOffer.name]}"
+            )
+            return
+
+        elif current_state == AddOffer.making_offer or current_state == AddOffer.discount:
+            await state.set_state(AddOffer.description)
+            await message.answer(
+                f"Ок, вы вернулись к прошлому шагу \n {AddOffer.texts[AddOffer.description]}"
+            )
+            return
+
+
+        elif current_state == AddProduct.price:
+            await state.set_state(AddProduct.description)
+            await message.answer(
+                f"Ок, вы вернулись к прошлому шагу \n {AddProduct.texts[AddProduct.description]}"
+            )
+            return
+
+
+        elif current_state == Add_FAQ.description:
+            await state.set_state(Add_FAQ.name)
+            await message.answer(
+                f"Ок, вы вернулись к прошлому шагу \n {Add_FAQ.texts[Add_FAQ.name]}"
+            )
+            return
+
+        previous = None
+        for step in AddProduct.__all_states__:
+            if step.state == current_state:
+                await state.set_state(previous)
+                await message.answer(
+                    f"Ок, вы вернулись к прошлому шагу \n {AddProduct.texts[previous.state]}"
+                )
+                return
+            previous = step
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
