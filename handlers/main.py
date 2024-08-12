@@ -3,6 +3,8 @@ from aiogram.filters import CommandStart, Command
 from aiogram.types import CallbackQuery, InlineKeyboardButton, Message
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from database.orm_query import orm_add_request_course_information
+from config_data.config import Config, load_config
 
 from filters.chat_types import ChatTypeFilter
 from keyboards.inline.inline import get_callback_btns
@@ -11,6 +13,13 @@ from lexicon.lexicon import LEXICON_btn_questions, LEXICON_RU, LEXICON_btn_answe
 from aiogram.filters import Command, StateFilter, or_f
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
+
+
+from dotenv import find_dotenv, load_dotenv
+
+load_dotenv(find_dotenv())
+
+config: Config = load_config()
 
 user_private_router = Router()
 user_private_router.message.filter(ChatTypeFilter(['private']))
@@ -56,9 +65,9 @@ class AddRequestCourse(StatesGroup):
     # product_for_change = None
 
     texts = {
-        'AddRequestCourse:question1': 'Ответьте на вопрос №1 - "Проблема, которую я хочу решить - ...", заново.',
-        'AddRequestCourse:question2': 'Ответьте на вопрос №2 - "Моя проблема выражается в....", заново.',
-        'AddRequestCourse:question3': 'Ответьте на вопрос №3 - "Результат, которого я хочу достичь — ...", заново.',
+        'AddRequestCourse:question1': 'Ответьте на вопрос №1 заново. "Проблема, которую я хочу решить - ..."',
+        'AddRequestCourse:question2': 'Ответьте на вопрос №2 заново. "Моя проблема выражается в...."',
+        'AddRequestCourse:question3': 'Ответьте на вопрос №3 заново. "Результат, которого я хочу достичь — ..."',
         'AddRequestCourse:contact_information': 'Этот стейт последний, поэтому...',
     }
 
@@ -74,13 +83,12 @@ async def back_step_handler(message: types.Message, state: FSMContext) -> None:
             'Предидущего шага нет. Напишите ОТМЕНА или ответьте на вопрос №1 - "Проблема, которую я хочу решить - ..."'
         )
         return
-
     previous = None
     for step in AddRequestCourse.__all_states__:
         if step.state == current_state:
             await state.set_state(previous)
             await message.answer(
-                f"Ок, вы вернулись к прошлому шагу \n {AddRequestCourse.texts[previous.state]}"
+                f"Ок, вы вернулись к прошлому шагу.\n{AddRequestCourse.texts[previous.state]}"
             )
             return
         previous = step
@@ -155,7 +163,7 @@ async def cancel_handler(message: types.Message, state: FSMContext) -> None:
     if current_state is None:
         return
     await state.clear()
-    await message.answer("Действия отменены",
+    await message.answer(text=LEXICON_RU["/help_with_course"],
                          reply_markup=get_callback_btns(btns=LEXICON_btn_answer_questions, sizes=(1,)))
 
 
@@ -165,7 +173,7 @@ async def add_question1(message: types.Message, state: FSMContext):
     if message.text:
         if len(message.text) < 5:
             await message.answer(
-                "Ответ на вопос должен быть более развернутым🤔 \n Введите ответ на вопрос заново."
+                "Ответ на вопос должен быть более развернутым🤔\nВведите ответ на вопрос заново."
             )
         else:
             await state.update_data(question1=message.text)
@@ -185,17 +193,88 @@ async def add_question2(message: types.Message, state: FSMContext):
     if message.text:
         if len(message.text) < 5:
             await message.answer(
-                "Ответ на вопос должен быть более развернутым🤔 \n Введите ответ на вопрос заново."
+                "Ответ на вопос должен быть более развернутым🤔\nВведите ответ на вопрос заново."
             )
         else:
             await state.update_data(question2=message.text)
             await message.answer("Ответьте на третий вопрос.\nРезультат, которого я хочу достичь — ...")
-            await state.set_state(AddRequestCourse.question2)
+            await state.set_state(AddRequestCourse.question3)
 
 
-# Хендлер для отлова некорректных вводов для состояния question1
+# Хендлер для отлова некорректных вводов для состояния question2
 @user_private_router.message(AddRequestCourse.question2)
 async def add_question2_2(message: types.Message, state: FSMContext):
+    await message.answer("Вы ввели не допустимые данные, введите текст ответа заново!")
+
+
+# Ловим данные для состояние question3 и потом меняем состояние на contact_information
+@user_private_router.message(AddRequestCourse.question3, F.text)
+async def add_question3(message: types.Message, state: FSMContext):
+    if message.text:
+        if len(message.text) < 5:
+            await message.answer(
+                "Ответ на вопос должен быть более развернутым🤔\nВведите ответ на вопрос заново."
+            )
+        else:
+            await state.update_data(question3=message.text)
+            await message.answer("Напишите как вам удобно, чтобы с вами связались?")
+            await state.set_state(AddRequestCourse.contact_information)
+
+
+# Хендлер для отлова некорректных вводов для состояния question3
+@user_private_router.message(AddRequestCourse.question3)
+async def add_question3_2(message: types.Message, state: FSMContext):
+    await message.answer("Вы ввели не допустимые данные, введите текст ответа заново!")
+
+
+# Ловим данные для состояние question3 и потом меняем состояние на contact_information
+@user_private_router.message(AddRequestCourse.contact_information, F.text)
+async def add_contact_information3(message: types.Message, state: FSMContext, session: AsyncSession, bot: Bot):
+    if message.text:
+        if len(message.text) < 3:
+            await message.answer(
+                "Думаю этого не достаточно, чтобы связаться с вами. Напишите еще раз!"
+            )
+        else:
+            await state.update_data(contact_information=message.text)
+            data = await state.get_data()
+
+            username_ = message.from_user.username
+
+            # Форматирование данных для отправки администратору
+            formatted_data = (
+                f"Новый запрос на курс:\n"
+                f"✅username пользователя:\n@{username_}\n"
+                f"✅1.Проблема, которую я хочу решить — ...\n{data.get('question1')}\n"
+                f"✅2.Моя проблема выражается в....\n{data.get('question2')}\n"
+                f"✅3.Результат, которого я хочу достичь — ...\n{data.get('question3')}\n"
+                f"✅Удобный для меня способ связи:\n{data.get('contact_information')}\n"
+                # Добавьте другие поля из data, если нужно
+            )
+
+            # Отправка сообщения администратору
+            admin_id = config.tg_bot.id_chat_admin
+            await bot.send_message(chat_id=admin_id, text=formatted_data)
+
+            try:
+                await orm_add_request_course_information(session=session,
+                                                         data=data,
+                                                         user_id=message.from_user.id,
+                                                         username=message.from_user.username,
+                                                         first_name=message.from_user.first_name,
+                                                         last_name=message.from_user.last_name)
+                await message.answer("Спасибо за ваши ответы. Мы с вами свжемся в ближайшее время.")
+                await state.clear()
+
+            except Exception as e:
+                await message.answer(
+                    f"Ошибка: \n{str(e)}\nОбратись к программеру, он опять денег хочет", sizes=(2,))
+                await state.clear()
+
+
+# Хендлер для отлова некорректных вводов для состояния question3
+@user_private_router.message(AddRequestCourse.contact_information)
+async def add_contact_information_2(message: types.Message, state: FSMContext):
     await message.answer("Вы ввели не допустимые данные, введите текст ответа заново!")
 
 #
