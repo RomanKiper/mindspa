@@ -8,12 +8,13 @@ from config_data.config import Config, load_config
 
 from filters.chat_types import ChatTypeFilter
 from keyboards.inline.inline import get_callback_btns
-from lexicon.lexicon import LEXICON_btn_questions, LEXICON_RU, LEXICON_btn_answer_questions
+from lexicon.lexicon import (LEXICON_btn_questions, LEXICON_RU, LEXICON_btn_answer_questions,
+                             LEXICON_btn_helh_with_code,
+                             LEXICON_btn_code_do_not_work)
 
 from aiogram.filters import Command, StateFilter, or_f
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
-
 
 from dotenv import find_dotenv, load_dotenv
 
@@ -46,6 +47,13 @@ async def start_cmd(message_or_callback: types.Union[types.Message, CallbackQuer
         await callback.message.delete()
 
 
+@user_private_router.callback_query(F.data == 'do_not_have_code')
+async def get_help_with_code(callback: types.CallbackQuery):
+    await callback.message.answer(text=LEXICON_RU["/help_with_code"],
+                                  reply_markup=get_callback_btns(btns=LEXICON_btn_helh_with_code, sizes=(1,)))
+    await callback.message.delete()
+
+
 @user_private_router.callback_query(F.data == 'help_with_course')
 async def get_help_with_questions(callback: types.CallbackQuery):
     await callback.message.answer(text=LEXICON_RU["/help_with_course"],
@@ -53,7 +61,7 @@ async def get_help_with_questions(callback: types.CallbackQuery):
     await callback.message.delete()
 
 
-###########################################
+###########################################FSM for question form#########################
 
 class AddRequestCourse(StatesGroup):
     # Шаги состояний
@@ -94,67 +102,15 @@ async def back_step_handler(message: types.Message, state: FSMContext) -> None:
         previous = step
 
 
-#
-# @admin_router.callback_query(F.data == 'products_list')
-# async def admin_features(callback: types.CallbackQuery, session: AsyncSession):
-#     categories = await orm_get_categories(session)
-#     btns = {category.name: f'category_{category.id}' for category in categories}
-#     await callback.message.answer("Выберите категорию", reply_markup=get_callback_btns(btns=btns))
-#
-#
-# @admin_router.callback_query(F.data.startswith('category_'))
-# async def starring_at_product(callback: types.CallbackQuery, session: AsyncSession):
-#     category_id = callback.data.split('_')[-1]
-#     user_id = callback.from_user.id
-#     print(user_id)
-#     for product in await orm_get_products(session, int(category_id), int(user_id)):
-#         await callback.message.answer_photo(
-#             product.image,
-#             caption=f"<strong>{product.name}\
-#                     </strong>\n{product.description}\nСтоимость: {round(product.price, 2)}",
-#             reply_markup=get_callback_btns(
-#                 btns={
-#                     "Удалить": f"delete_{product.id}",
-#                     "Изменить": f"change_{product.id}",
-#                 },
-#                 sizes=(2,)
-#             ),
-#         )
-#     await callback.answer()
-#     await callback.message.answer("ОК, вот список товаров ⏫")
-#
-#
-# @admin_router.callback_query(F.data.startswith("delete_"))
-# async def delete_product_callback(callback: types.CallbackQuery, session: AsyncSession):
-#     product_id = callback.data.split("_")[-1]
-#     await orm_delete_product(session, int(product_id))
-#
-#     await callback.answer("Товар удален")
-#     await callback.message.answer("Товар удален!")
-#
-# # FSM:
-#
-# @admin_router.callback_query(StateFilter(None), F.data.startswith("change_"))
-# async def change_product_callback(callback: types.CallbackQuery, state: FSMContext, session: AsyncSession):
-#     product_id = callback.data.split("_")[-1]
-#     product_for_change = await orm_get_product(session, int(product_id))
-#     AddProduct.product_for_change = product_for_change
-#     await callback.answer()
-#     await callback.message.answer(
-#         "Введите название товара", reply_markup=types.ReplyKeyboardRemove()
-#     )
-#     await state.set_state(AddProduct.name)
-#
-#
 # Становимся в состояние ожидания ввода ответ на вопрос №1
 @user_private_router.callback_query(StateFilter(None), F.data == 'first_question_form')
 async def question_form(callback: types.CallbackQuery, state: FSMContext):
-    await callback.message.answer("Ответьте на первыйй вопрос. Проблема, которую я хочу решить - ...")
+    await callback.message.answer("<b>Ответьте на первый вопрос.</b>\n<i>Проблема, которую я хочу решить - ...</i>")
     await callback.message.delete()
     await state.set_state(AddRequestCourse.question1)
 
 
-# Хендлер отмены и сброса состояния должен быть всегда именно хдесь,
+# Хендлер отмены и сброса состояния должен быть всегда именно здесь,
 # после того как только встали в состояние номер 1 (элементарная очередность фильтров)
 @user_private_router.message(StateFilter("*"), Command("отмена"))
 @user_private_router.message(StateFilter("*"), F.text.casefold() == "отмена")
@@ -177,7 +133,7 @@ async def add_question1(message: types.Message, state: FSMContext):
             )
         else:
             await state.update_data(question1=message.text)
-            await message.answer("Ответьте на второй вопрос.\nМоя проблема выражается в....")
+            await message.answer("<b>Ответьте на второй вопрос.</b>\n<i>Моя проблема выражается в....</i>")
             await state.set_state(AddRequestCourse.question2)
 
 
@@ -197,7 +153,7 @@ async def add_question2(message: types.Message, state: FSMContext):
             )
         else:
             await state.update_data(question2=message.text)
-            await message.answer("Ответьте на третий вопрос.\nРезультат, которого я хочу достичь — ...")
+            await message.answer("<b>Ответьте на третий вопрос.</b>\n<i>Результат, которого я хочу достичь — ...</i>")
             await state.set_state(AddRequestCourse.question3)
 
 
@@ -217,7 +173,7 @@ async def add_question3(message: types.Message, state: FSMContext):
             )
         else:
             await state.update_data(question3=message.text)
-            await message.answer("Напишите как вам удобно, чтобы с вами связались?")
+            await message.answer("<b>Напишите как вам удобно, чтобы с вами связались?</b>")
             await state.set_state(AddRequestCourse.contact_information)
 
 
@@ -227,7 +183,7 @@ async def add_question3_2(message: types.Message, state: FSMContext):
     await message.answer("Вы ввели не допустимые данные, введите текст ответа заново!")
 
 
-# Ловим данные для состояние question3 и потом меняем состояние на contact_information
+# Ловим данные для состояние contact_information
 @user_private_router.message(AddRequestCourse.contact_information, F.text)
 async def add_contact_information3(message: types.Message, state: FSMContext, session: AsyncSession, bot: Bot):
     if message.text:
@@ -239,17 +195,21 @@ async def add_contact_information3(message: types.Message, state: FSMContext, se
             await state.update_data(contact_information=message.text)
             data = await state.get_data()
 
+            user_id = message.from_user.id
+            full_name = message.from_user.full_name
             username_ = message.from_user.username
+            user_link = f"<a href='tg://user?id={user_id}'>{full_name}</a>"
 
             # Форматирование данных для отправки администратору
             formatted_data = (
-                f"Новый запрос на курс:\n"
-                f"✅username пользователя:\n@{username_}\n"
+                f"<b>Новый запрос на курс:</b>\n"
+                f"✅Сообщение от:\n"
+                f"username пользователя:\n@{username_}\n"
+                f"Ссылка на пользователя:\n{user_link}\n"
                 f"✅1.Проблема, которую я хочу решить — ...\n{data.get('question1')}\n"
                 f"✅2.Моя проблема выражается в....\n{data.get('question2')}\n"
                 f"✅3.Результат, которого я хочу достичь — ...\n{data.get('question3')}\n"
                 f"✅Удобный для меня способ связи:\n{data.get('contact_information')}\n"
-                # Добавьте другие поля из data, если нужно
             )
 
             # Отправка сообщения администратору
@@ -263,7 +223,8 @@ async def add_contact_information3(message: types.Message, state: FSMContext, se
                                                          username=message.from_user.username,
                                                          first_name=message.from_user.first_name,
                                                          last_name=message.from_user.last_name)
-                await message.answer("Спасибо за ваши ответы. Мы с вами свжемся в ближайшее время.")
+                await message.answer(
+                    "Спасибо за ваши ответы.\nНаш психолог даст тебе обратную связь в течение несколько часов, в редких случаях в срок до 24 часов.")
                 await state.clear()
 
             except Exception as e:
@@ -272,44 +233,123 @@ async def add_contact_information3(message: types.Message, state: FSMContext, se
                 await state.clear()
 
 
-# Хендлер для отлова некорректных вводов для состояния question3
+# Хендлер для отлова некорректных вводов для состояния contact_information
 @user_private_router.message(AddRequestCourse.contact_information)
 async def add_contact_information_2(message: types.Message, state: FSMContext):
     await message.answer("Вы ввели не допустимые данные, введите текст ответа заново!")
 
-#
-#
-# # Ловим данные для состояние image и потом выходим из состояний
-# @admin_router.message(AddProduct.image, or_f(F.photo, F.text == "."))
-# async def add_image(message: types.Message, state: FSMContext, session: AsyncSession):
-#     if message.text and message.text == "." and AddProduct.product_for_change:
-#         await state.update_data(image=AddProduct.product_for_change.image)
-#
-#     elif message.photo:
-#         await state.update_data(image=message.photo[-1].file_id)
-#     else:
-#         await message.answer("Отправьте фото предложения!")
-#         return
-#     data = await state.get_data()
-#     user_id = message.from_user.id
-#     try:
-#         if AddProduct.product_for_change:
-#             await orm_update_product(session, AddProduct.product_for_change.id, data, user_id)
-#         else:
-#             await orm_add_product(session, data, user_id)
-#         await message.answer("Товар добавлен/изменен", reply_markup=get_callback_btns(btns=LEXICON_btn_main_admin_menu, sizes=(2,)))
-#         await state.clear()
-#
-#     except Exception as e:
-#         await message.answer(
-#             f"Ошибка: \n{str(e)}\nОбратись к программеру, он опять денег хочет",
-#             reply_markup=get_callback_btns(btns=LEXICON_btn_main_admin_menu, sizes=(2,)),
-#         )
-#         await state.clear()
-#
-#     AddProduct.product_for_change = None
-#
-# # Ловим все прочее некорректное поведение для этого состояния
-# @admin_router.message(AddProduct.image)
-# async def add_image2(message: types.Message, state: FSMContext):
-#     await message.answer("Отправьте фото.")
+
+########################################  end FSM for question form###################################################################
+
+
+#####################################FSM for code form ######################################################
+
+class AddSendMail(StatesGroup):
+    # Шаги состояний
+    sending_mail = State()
+
+
+# cтановимся в состояние ожидания ответа sending_mail
+@user_private_router.callback_query(StateFilter(None), F.data == 'send_mail_adress')
+async def question_form(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.answer("<b>Пришлите электронный адрес, который был указан при покупке.</b>")
+    await callback.message.delete()
+    await state.set_state(AddSendMail.sending_mail)
+
+
+# Ловим данные для состояние sending_mail
+@user_private_router.message(AddSendMail.sending_mail, F.text)
+async def add_sending_mail_information(message: types.Message, state: FSMContext, session: AsyncSession, bot: Bot):
+    if message.text:
+        if len(message.text) < 3:
+            await message.answer(
+                "Думаю этого не достаточно, чтобы связаться с вами. Напишите еще раз!"
+            )
+        else:
+            await state.update_data(sending_mail=message.text)
+            data = await state.get_data()
+
+            user_id = message.from_user.id
+            full_name = message.from_user.full_name
+            username_ = message.from_user.username
+            user_link = f"<a href='tg://user?id={user_id}'>{full_name}</a>"
+
+            # Форматирование данных для отправки администратору
+            formatted_data = (
+                f"<b>Новый запрос на получение кода:</b>\n"
+                f"✅Сообщение от:\n"
+                f"username пользователя:\n@{username_}\n"
+                f"Ссылка на пользователя:\n{user_link}\n"
+                f"✅Адрес электронной почты, который был указан при покупке:\n{data.get('sending_mail')}\n"
+            )
+
+            # Отправка сообщения администратору
+            admin_id = config.tg_bot.id_chat_admin
+            await bot.send_message(chat_id=admin_id, text=formatted_data)
+
+            try:
+                await message.answer(
+                    "Спасибо!\nТвой запрос и адрес переданы в службу технической поддержки. "
+                    "Доступ поступит на указанную тобой электронную почту. "
+                    "Обычно это занимает несколько часов, в редких случаях — до 24 часов.")
+                await state.clear()
+            except Exception as e:
+                await message.answer(
+                    f"Ошибка: \n{str(e)}\nОбратись к программеру, он опять денег хочет", sizes=(2,))
+                await state.clear()
+
+
+# Хендлер для отлова некорректных вводов для состояния question3
+@user_private_router.message(AddSendMail.sending_mail)
+async def add_sending_mail_information_2(message: types.Message, state: FSMContext):
+    await message.answer("Вы ввели не допустимые данные, введите текст ответа заново!")
+
+
+@user_private_router.callback_query(F.data == 'question_is_solved')
+async def question_form_finish_answer(callback: types.CallbackQuery):
+    await callback.message.answer("Спасибо!\n"
+                                  "Команда Mindspa рада помочь вам.")
+    await callback.message.delete()
+
+
+##################################################bad code###########################
+
+@user_private_router.callback_query(F.data == 'bad_code')
+async def get_answer_bad_code(callback: types.CallbackQuery):
+    await callback.message.answer(text=LEXICON_RU["/bad_code"],
+                                  reply_markup=get_callback_btns(btns=LEXICON_btn_code_do_not_work, sizes=(1,)))
+    await callback.message.delete()
+
+
+@user_private_router.callback_query(F.data == 'problem_is_solved')
+async def get_answer_problem_solved(callback: types.CallbackQuery):
+    await callback.message.answer(text=LEXICON_RU["/bad_code_problem_solved"], )
+    await callback.message.delete()
+
+
+@user_private_router.callback_query(F.data == 'problem_is_not_solved')
+async def get_answer_problem_not_solved(callback: types.CallbackQuery, bot: Bot):
+    await callback.message.answer(text=LEXICON_RU["/bad_code_problem_not_solved"], )
+
+    user_id = callback.from_user.id
+    full_name = callback.from_user.full_name
+    username_ = callback.from_user.username
+    user_link = f"<a href='tg://user?id={user_id}'>{full_name}</a>"
+
+    # Форматирование данных для отправки администратору
+    formatted_data = (
+        f"<b>Новый запрос.</b>\n"
+        f"Мне пришел код, но он не работает.\n"
+        f"✅Сообщение от:\n"
+        f"username пользователя:\n@{username_}\n"
+        f"Ссылка на пользователя:\n{user_link}\n"
+    )
+
+    # Отправка сообщения администратору
+    admin_id = config.tg_bot.id_chat_admin
+    await bot.send_message(chat_id=admin_id, text=formatted_data)
+    await callback.message.delete()
+
+################################################## end bad code###########################
+
+##################################################entering code instruction ###########################
