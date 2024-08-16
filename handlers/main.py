@@ -7,10 +7,10 @@ from database.orm_query import orm_add_request_course_information
 from config_data.config import Config, load_config
 
 from filters.chat_types import ChatTypeFilter
-from keyboards.inline.inline import get_callback_btns
+from keyboards.inline.inline import get_callback_btns, get_inlineMix_btns
 from lexicon.lexicon import (LEXICON_btn_questions, LEXICON_RU, LEXICON_btn_answer_questions,
-                             LEXICON_btn_helh_with_code,
-                             LEXICON_btn_code_do_not_work)
+                             LEXICON_btn_helh_with_code, LEXICON_btn_entering_code, LEXICON_btn_code_do_not_work,
+                             LEXICON_btn_model_phone)
 
 from aiogram.filters import Command, StateFilter, or_f
 from aiogram.fsm.state import StatesGroup, State
@@ -352,4 +352,19 @@ async def get_answer_problem_not_solved(callback: types.CallbackQuery, bot: Bot)
 
 ################################################## end bad code###########################
 
-##################################################entering code instruction ###########################
+################################################## entering code instruction ##############
+
+@user_private_router.callback_query(F.data == 'do_not_now_how_to_enter_code')
+async def get_instruction_code(callback: types.CallbackQuery):
+    await callback.message.answer(text=LEXICON_RU["/instruction_entering_code"],
+                                  reply_markup=get_inlineMix_btns(btns=LEXICON_btn_entering_code, sizes=(1,)))
+    await callback.message.delete()
+
+
+@user_private_router.callback_query(F.data == 'choose_phone_model')
+async def get_two_btn_phones(callback: types.CallbackQuery):
+    await callback.message.answer(text="Выбери модель своего телефона.",
+                                  reply_markup=get_callback_btns(btns=LEXICON_btn_model_phone, sizes=(2,)))
+    await callback.message.delete()
+
+################################################## entering code instruction ##############################
