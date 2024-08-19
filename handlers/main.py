@@ -10,7 +10,8 @@ from filters.chat_types import ChatTypeFilter
 from keyboards.inline.inline import get_callback_btns, get_inlineMix_btns
 from lexicon.lexicon import (LEXICON_btn_questions, LEXICON_RU, LEXICON_btn_answer_questions,
                              LEXICON_btn_helh_with_code, LEXICON_btn_entering_code, LEXICON_btn_code_do_not_work,
-                             LEXICON_btn_model_phone)
+                             LEXICON_btn_model_phone, LEXICON_btn_back_to_questions, LEXICON_btn_logging_instruction,
+                             LEXICON_btn_no_my_question)
 
 from aiogram.filters import Command, StateFilter, or_f
 from aiogram.fsm.state import StatesGroup, State
@@ -163,9 +164,9 @@ async def add_question2_2(message: types.Message, state: FSMContext):
     await message.answer("Вы ввели не допустимые данные, введите текст ответа заново!")
 
 
-# Ловим данные для состояние question3 и потом меняем состояние на contact_information
+# Ловим данные для состояние question3
 @user_private_router.message(AddRequestCourse.question3, F.text)
-async def add_question3(message: types.Message, state: FSMContext):
+async def add_question3(message: types.Message, state: FSMContext, session: AsyncSession, bot: Bot):
     if message.text:
         if len(message.text) < 5:
             await message.answer(
@@ -173,26 +174,6 @@ async def add_question3(message: types.Message, state: FSMContext):
             )
         else:
             await state.update_data(question3=message.text)
-            await message.answer("<b>Напишите как вам удобно, чтобы с вами связались?</b>")
-            await state.set_state(AddRequestCourse.contact_information)
-
-
-# Хендлер для отлова некорректных вводов для состояния question3
-@user_private_router.message(AddRequestCourse.question3)
-async def add_question3_2(message: types.Message, state: FSMContext):
-    await message.answer("Вы ввели не допустимые данные, введите текст ответа заново!")
-
-
-# Ловим данные для состояние contact_information
-@user_private_router.message(AddRequestCourse.contact_information, F.text)
-async def add_contact_information3(message: types.Message, state: FSMContext, session: AsyncSession, bot: Bot):
-    if message.text:
-        if len(message.text) < 3:
-            await message.answer(
-                "Думаю этого не достаточно, чтобы связаться с вами. Напишите еще раз!"
-            )
-        else:
-            await state.update_data(contact_information=message.text)
             data = await state.get_data()
 
             user_id = message.from_user.id
@@ -209,7 +190,6 @@ async def add_contact_information3(message: types.Message, state: FSMContext, se
                 f"✅1.Проблема, которую я хочу решить — ...\n{data.get('question1')}\n"
                 f"✅2.Моя проблема выражается в....\n{data.get('question2')}\n"
                 f"✅3.Результат, которого я хочу достичь — ...\n{data.get('question3')}\n"
-                f"✅Удобный для меня способ связи:\n{data.get('contact_information')}\n"
             )
 
             # Отправка сообщения администратору
@@ -224,7 +204,9 @@ async def add_contact_information3(message: types.Message, state: FSMContext, se
                                                          first_name=message.from_user.first_name,
                                                          last_name=message.from_user.last_name)
                 await message.answer(
-                    "Спасибо за ваши ответы.\nНаш психолог даст тебе обратную связь в течение несколько часов, в редких случаях в срок до 24 часов.")
+                    "Спасибо за ваши ответы.\nНаш психолог даст тебе обратную связь"
+                    " в течение несколько часов, в редких случаях в срок до 24 часов.",
+                    reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
                 await state.clear()
 
             except Exception as e:
@@ -233,9 +215,9 @@ async def add_contact_information3(message: types.Message, state: FSMContext, se
                 await state.clear()
 
 
-# Хендлер для отлова некорректных вводов для состояния contact_information
-@user_private_router.message(AddRequestCourse.contact_information)
-async def add_contact_information_2(message: types.Message, state: FSMContext):
+# Хендлер для отлова некорректных вводов для состояния question3
+@user_private_router.message(AddRequestCourse.question3)
+async def add_question3(message: types.Message, state: FSMContext):
     await message.answer("Вы ввели не допустимые данные, введите текст ответа заново!")
 
 
@@ -299,7 +281,7 @@ async def add_sending_mail_information(message: types.Message, state: FSMContext
                 await state.clear()
 
 
-# Хендлер для отлова некорректных вводов для состояния question3
+# Хендлер для отлова некорректных вводов для состояния sending_mail
 @user_private_router.message(AddSendMail.sending_mail)
 async def add_sending_mail_information_2(message: types.Message, state: FSMContext):
     await message.answer("Вы ввели не допустимые данные, введите текст ответа заново!")
@@ -308,7 +290,8 @@ async def add_sending_mail_information_2(message: types.Message, state: FSMConte
 @user_private_router.callback_query(F.data == 'question_is_solved')
 async def question_form_finish_answer(callback: types.CallbackQuery):
     await callback.message.answer("Спасибо!\n"
-                                  "Команда Mindspa рада помочь вам.")
+                                  "Команда Mindspa рада помочь вам.",
+                                  reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
     await callback.message.delete()
 
 
@@ -323,7 +306,8 @@ async def get_answer_bad_code(callback: types.CallbackQuery):
 
 @user_private_router.callback_query(F.data == 'problem_is_solved')
 async def get_answer_problem_solved(callback: types.CallbackQuery):
-    await callback.message.answer(text=LEXICON_RU["/bad_code_problem_solved"], )
+    await callback.message.answer(text=LEXICON_RU["/bad_code_problem_solved"],
+                                  reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
     await callback.message.delete()
 
 
@@ -350,6 +334,7 @@ async def get_answer_problem_not_solved(callback: types.CallbackQuery, bot: Bot)
     await bot.send_message(chat_id=admin_id, text=formatted_data)
     await callback.message.delete()
 
+
 ################################################## end bad code###########################
 
 ################################################## entering code instruction ##############
@@ -367,4 +352,166 @@ async def get_two_btn_phones(callback: types.CallbackQuery):
                                   reply_markup=get_callback_btns(btns=LEXICON_btn_model_phone, sizes=(2,)))
     await callback.message.delete()
 
-################################################## entering code instruction ##############################
+
+################################################## end  entering code instruction ##############################
+
+
+################################################## I can't log into my account###########################
+
+@user_private_router.callback_query(F.data == 'can_not_enter_account')
+async def get_information_entering(callback: types.CallbackQuery):
+    await callback.message.answer(text=LEXICON_RU["/instruction_entering_accaunt"],
+                                  reply_markup=get_callback_btns(btns=LEXICON_btn_logging_instruction, sizes=(1,)))
+    await callback.message.delete()
+
+
+class AddLogAccaunt(StatesGroup):
+    # Шаги состояний
+    log_sending_mail = State()
+
+
+# cтановимся в состояние ожидания ответа sending_mail
+@user_private_router.callback_query(StateFilter(None), F.data == 'log_send_mail_to_admin')
+async def log_form(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.answer("<b>Пожалуйста, пришли электронный адрес, который был указан при регистрации.</b>")
+    await callback.message.delete()
+    await state.set_state(AddLogAccaunt.log_sending_mail)
+
+
+# Ловим данные для состояние sending_mail
+@user_private_router.message(AddLogAccaunt.log_sending_mail, F.text)
+async def add_sending_mail_information_log(message: types.Message, state: FSMContext, session: AsyncSession, bot: Bot):
+    if message.text:
+        if len(message.text) < 3:
+            await message.answer(
+                "Думаю этого не достаточно, чтобы связаться с вами. Напишите еще раз!"
+            )
+        else:
+            await state.update_data(log_sending_mail=message.text)
+            data = await state.get_data()
+
+            user_id = message.from_user.id
+            full_name = message.from_user.full_name
+            username_ = message.from_user.username
+            user_link = f"<a href='tg://user?id={user_id}'>{full_name}</a>"
+
+            # Форматирование данных для отправки администратору
+            formatted_data = (
+                f"<b>Новое сообщение по проблеме 'Не могу войти в аккаунт':</b>\n"
+                f"✅Сообщение от:\n"
+                f"username пользователя:\n@{username_}\n"
+                f"Ссылка на пользователя:\n{user_link}\n"
+                f"✅Адрес электронной почты, который был указан при регистрации:\n{data.get('log_sending_mail')}\n"
+            )
+
+            # Отправка сообщения администратору
+            admin_id = config.tg_bot.id_chat_admin
+            await bot.send_message(chat_id=admin_id, text=formatted_data)
+
+            try:
+                await message.answer(
+                    "Спасибо!\nТвой запрос и адрес переданы в службу технической поддержки.\n\n"
+                    "Временный пароль поступит на указанную тобой электронную почту.\n"
+                    "После его можно будет изменить в настройках.\n"
+                    "Обычно срок получения ответа занимает несколько часов, в редких случаях — до 24 часов.")
+
+                await state.clear()
+            except Exception as e:
+                await message.answer(
+                    f"Ошибка: \n{str(e)}\nОбратись к программеру, он опять денег хочет", sizes=(2,))
+                await state.clear()
+
+
+# Хендлер для отлова некорректных вводов для состояния log_sending_mail
+@user_private_router.message(AddLogAccaunt.log_sending_mail)
+async def add_sending_mail_information_log_2(message: types.Message, state: FSMContext):
+    await message.answer("Вы ввели не допустимые данные, введите текст ответа заново!")
+
+
+@user_private_router.callback_query(F.data == 'log_problem_is_solved')
+async def question_form_finish_answer(callback: types.CallbackQuery):
+    await callback.message.answer("Спасибо!\n"
+                                  "Команда Mindspa рада помочь вам.",
+                                  reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
+    await callback.message.delete()
+
+################################################## end I can't log into my account###########################
+
+################################################## My question is not in list ###########################
+
+@user_private_router.callback_query(F.data == 'no_my_question')
+async def get_no_my_question(callback: types.CallbackQuery):
+    await callback.message.answer(text=LEXICON_RU["/no_my_question"],
+                                  reply_markup=get_callback_btns(btns=LEXICON_btn_no_my_question, sizes=(1,)))
+    await callback.message.delete()
+
+
+class AddLogAccaunt(StatesGroup):
+    # Шаги состояний
+    log_sending_mail = State()
+
+
+# cтановимся в состояние ожидания ответа sending_mail
+@user_private_router.callback_query(StateFilter(None), F.data == 'log_send_mail_to_admin')
+async def log_form(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.answer("<b>Пожалуйста, пришли электронный адрес, который был указан при регистрации.</b>")
+    await callback.message.delete()
+    await state.set_state(AddLogAccaunt.log_sending_mail)
+
+
+# Ловим данные для состояние sending_mail
+@user_private_router.message(AddLogAccaunt.log_sending_mail, F.text)
+async def add_sending_mail_information_log(message: types.Message, state: FSMContext, session: AsyncSession, bot: Bot):
+    if message.text:
+        if len(message.text) < 3:
+            await message.answer(
+                "Думаю этого не достаточно, чтобы связаться с вами. Напишите еще раз!"
+            )
+        else:
+            await state.update_data(log_sending_mail=message.text)
+            data = await state.get_data()
+
+            user_id = message.from_user.id
+            full_name = message.from_user.full_name
+            username_ = message.from_user.username
+            user_link = f"<a href='tg://user?id={user_id}'>{full_name}</a>"
+
+            # Форматирование данных для отправки администратору
+            formatted_data = (
+                f"<b>Новое сообщение по проблеме 'Не могу войти в аккаунт':</b>\n"
+                f"✅Сообщение от:\n"
+                f"username пользователя:\n@{username_}\n"
+                f"Ссылка на пользователя:\n{user_link}\n"
+                f"✅Адрес электронной почты, который был указан при регистрации:\n{data.get('log_sending_mail')}\n"
+            )
+
+            # Отправка сообщения администратору
+            admin_id = config.tg_bot.id_chat_admin
+            await bot.send_message(chat_id=admin_id, text=formatted_data)
+
+            try:
+                await message.answer(
+                    "Спасибо!\nТвой запрос и адрес переданы в службу технической поддержки.\n\n"
+                    "Временный пароль поступит на указанную тобой электронную почту.\n"
+                    "После его можно будет изменить в настройках.\n"
+                    "Обычно срок получения ответа занимает несколько часов, в редких случаях — до 24 часов.")
+
+                await state.clear()
+            except Exception as e:
+                await message.answer(
+                    f"Ошибка: \n{str(e)}\nОбратись к программеру, он опять денег хочет", sizes=(2,))
+                await state.clear()
+
+
+# Хендлер для отлова некорректных вводов для состояния log_sending_mail
+@user_private_router.message(AddLogAccaunt.log_sending_mail)
+async def add_sending_mail_information_log_2(message: types.Message, state: FSMContext):
+    await message.answer("Вы ввели не допустимые данные, введите текст ответа заново!")
+
+
+@user_private_router.callback_query(F.data == 'log_problem_is_solved')
+async def question_form_finish_answer(callback: types.CallbackQuery):
+    await callback.message.answer("Спасибо!\n"
+                                  "Команда Mindspa рада помочь вам.",
+                                  reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
+    await callback.message.delete()

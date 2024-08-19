@@ -29,7 +29,6 @@ class CourseRequest(Base):
     question1: Mapped[str] = mapped_column(Text)
     question2: Mapped[str] = mapped_column(Text)
     question3: Mapped[str] = mapped_column(Text)
-    contact_information: Mapped[str] = mapped_column(Text)
     first_name: Mapped[str] = mapped_column(String(150), nullable=True)
     last_name: Mapped[str] = mapped_column(String(150), nullable=True)
     username: Mapped[str] = mapped_column(unique=False, nullable=True)
