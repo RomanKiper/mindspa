@@ -12,6 +12,7 @@ from lexicon.lexicon import (LEXICON_btn_questions, LEXICON_RU, LEXICON_btn_answ
                              LEXICON_btn_helh_with_code, LEXICON_btn_entering_code, LEXICON_btn_code_do_not_work,
                              LEXICON_btn_model_phone, LEXICON_btn_back_to_questions, LEXICON_btn_logging_instruction,
                              LEXICON_btn_no_my_question)
+from lexicon.lexicon import PDF_FILE_ANDR_INTR, PDF_FILE_IPHONE_INTR
 
 from aiogram.filters import Command, StateFilter, or_f
 from aiogram.fsm.state import StatesGroup, State
@@ -38,7 +39,8 @@ async def start_cmd(message_or_callback: types.Union[types.Message, CallbackQuer
     if isinstance(message_or_callback, types.Message):
         message = message_or_callback
         await message.answer(text=LEXICON_RU["/question_list"],
-                             reply_markup=get_callback_btns(btns=LEXICON_btn_questions, sizes=(1,)))
+                             reply_markup=get_callback_btns(btns=LEXICON_btn_questions, sizes=(1,)),
+                             disable_web_page_preview=True)
         await message.delete()
 
     elif isinstance(message_or_callback, types.CallbackQuery):
@@ -270,10 +272,8 @@ async def add_sending_mail_information(message: types.Message, state: FSMContext
             await bot.send_message(chat_id=admin_id, text=formatted_data)
 
             try:
-                await message.answer(
-                    "Спасибо!\nТвой запрос и адрес переданы в службу технической поддержки. "
-                    "Доступ поступит на указанную тобой электронную почту. "
-                    "Обычно это занимает несколько часов, в редких случаях — до 24 часов.")
+                await message.answer(text=LEXICON_RU['/answer_about_code'],
+                                     reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
                 await state.clear()
             except Exception as e:
                 await message.answer(
@@ -313,7 +313,8 @@ async def get_answer_problem_solved(callback: types.CallbackQuery):
 
 @user_private_router.callback_query(F.data == 'problem_is_not_solved')
 async def get_answer_problem_not_solved(callback: types.CallbackQuery, bot: Bot):
-    await callback.message.answer(text=LEXICON_RU["/bad_code_problem_not_solved"], )
+    await callback.message.answer(text=LEXICON_RU["/bad_code_problem_not_solved"],
+                                  reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
 
     user_id = callback.from_user.id
     full_name = callback.from_user.full_name
@@ -351,6 +352,30 @@ async def get_two_btn_phones(callback: types.CallbackQuery):
     await callback.message.answer(text="Выбери модель своего телефона.",
                                   reply_markup=get_callback_btns(btns=LEXICON_btn_model_phone, sizes=(2,)))
     await callback.message.delete()
+
+
+@user_private_router.callback_query(F.data == 'android_phone')
+async def send_pdf_android(calback: CallbackQuery):
+    try:
+        # Отправка PDF-документа по его ID
+        await calback.message.answer_document(document=PDF_FILE_ANDR_INTR,
+                                              caption=LEXICON_RU['/instruction_android'],
+                                              reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
+
+    except Exception as e:
+        await calback.message.answer(f"Произошла ошибка при отправке документа: {str(e)}")
+
+
+@user_private_router.callback_query(F.data == 'iphone_phone')
+async def send_pdf_android(calback: CallbackQuery):
+    try:
+        # Отправка PDF-документа по его ID
+        await calback.message.answer_document(document=PDF_FILE_IPHONE_INTR,
+                                              caption=LEXICON_RU['/instruction_iphone'],
+                                              reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
+
+    except Exception as e:
+        await calback.message.answer(f"Произошла ошибка при отправке документа: {str(e)}")
 
 
 ################################################## end  entering code instruction ##############################
@@ -409,11 +434,8 @@ async def add_sending_mail_information_log(message: types.Message, state: FSMCon
             await bot.send_message(chat_id=admin_id, text=formatted_data)
 
             try:
-                await message.answer(
-                    "Спасибо!\nТвой запрос и адрес переданы в службу технической поддержки.\n\n"
-                    "Временный пароль поступит на указанную тобой электронную почту.\n"
-                    "После его можно будет изменить в настройках.\n"
-                    "Обычно срок получения ответа занимает несколько часов, в редких случаях — до 24 часов.")
+                await message.answer(text=LEXICON_RU['/log_code_answer'],
+                                     reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
 
                 await state.clear()
             except Exception as e:
@@ -430,10 +452,11 @@ async def add_sending_mail_information_log_2(message: types.Message, state: FSMC
 
 @user_private_router.callback_query(F.data == 'log_problem_is_solved')
 async def question_form_finish_answer(callback: types.CallbackQuery):
-    await callback.message.answer("Спасибо!\n"
+    await callback.message.answer("<b>Спасибо!</b>\n"
                                   "Команда Mindspa рада помочь вам.",
                                   reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
     await callback.message.delete()
+
 
 ################################################## end I can't log into my account###########################
 
@@ -446,29 +469,29 @@ async def get_no_my_question(callback: types.CallbackQuery):
     await callback.message.delete()
 
 
-class AddLogAccaunt(StatesGroup):
+class AddNewQuestion(StatesGroup):
     # Шаги состояний
-    log_sending_mail = State()
+    new_question = State()
 
 
-# cтановимся в состояние ожидания ответа sending_mail
-@user_private_router.callback_query(StateFilter(None), F.data == 'log_send_mail_to_admin')
-async def log_form(callback: types.CallbackQuery, state: FSMContext):
-    await callback.message.answer("<b>Пожалуйста, пришли электронный адрес, который был указан при регистрации.</b>")
+# cтановимся в состояние ожидания ответа new_question
+@user_private_router.callback_query(StateFilter(None), F.data == 'write_new_question')
+async def get_form_new_question(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.answer("<b>Напишите какой у тебя вопрос.</b>")
     await callback.message.delete()
-    await state.set_state(AddLogAccaunt.log_sending_mail)
+    await state.set_state(AddNewQuestion.new_question)
 
 
-# Ловим данные для состояние sending_mail
-@user_private_router.message(AddLogAccaunt.log_sending_mail, F.text)
-async def add_sending_mail_information_log(message: types.Message, state: FSMContext, session: AsyncSession, bot: Bot):
+# Ловим данные для состояние new_question
+@user_private_router.message(AddNewQuestion.new_question, F.text)
+async def add_new_question_information(message: types.Message, state: FSMContext, session: AsyncSession, bot: Bot):
     if message.text:
-        if len(message.text) < 3:
+        if len(message.text) < 4:
             await message.answer(
-                "Думаю этого не достаточно, чтобы связаться с вами. Напишите еще раз!"
+                "Напиши больше информации!"
             )
         else:
-            await state.update_data(log_sending_mail=message.text)
+            await state.update_data(new_question=message.text)
             data = await state.get_data()
 
             user_id = message.from_user.id
@@ -478,11 +501,11 @@ async def add_sending_mail_information_log(message: types.Message, state: FSMCon
 
             # Форматирование данных для отправки администратору
             formatted_data = (
-                f"<b>Новое сообщение по проблеме 'Не могу войти в аккаунт':</b>\n"
+                f"<b>Новое сообщение. 'В списке нет моего вопроса.':</b>\n"
                 f"✅Сообщение от:\n"
                 f"username пользователя:\n@{username_}\n"
                 f"Ссылка на пользователя:\n{user_link}\n"
-                f"✅Адрес электронной почты, который был указан при регистрации:\n{data.get('log_sending_mail')}\n"
+                f"✅Текс сообщения от пользователя:\n{data.get('new_question')}\n"
             )
 
             # Отправка сообщения администратору
@@ -490,12 +513,8 @@ async def add_sending_mail_information_log(message: types.Message, state: FSMCon
             await bot.send_message(chat_id=admin_id, text=formatted_data)
 
             try:
-                await message.answer(
-                    "Спасибо!\nТвой запрос и адрес переданы в службу технической поддержки.\n\n"
-                    "Временный пароль поступит на указанную тобой электронную почту.\n"
-                    "После его можно будет изменить в настройках.\n"
-                    "Обычно срок получения ответа занимает несколько часов, в редких случаях — до 24 часов.")
-
+                await message.answer(text=LEXICON_RU['/finish_answer'],
+                                     reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
                 await state.clear()
             except Exception as e:
                 await message.answer(
@@ -503,15 +522,26 @@ async def add_sending_mail_information_log(message: types.Message, state: FSMCon
                 await state.clear()
 
 
-# Хендлер для отлова некорректных вводов для состояния log_sending_mail
-@user_private_router.message(AddLogAccaunt.log_sending_mail)
-async def add_sending_mail_information_log_2(message: types.Message, state: FSMContext):
+# Хендлер для отлова некорректных вводов для состояния new_question
+@user_private_router.message(AddNewQuestion.new_question)
+async def add_new_question_information_2(message: types.Message, state: FSMContext):
     await message.answer("Вы ввели не допустимые данные, введите текст ответа заново!")
 
-
-@user_private_router.callback_query(F.data == 'log_problem_is_solved')
-async def question_form_finish_answer(callback: types.CallbackQuery):
-    await callback.message.answer("Спасибо!\n"
-                                  "Команда Mindspa рада помочь вам.",
-                                  reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
-    await callback.message.delete()
+############################################################################
+# @user_private_router.message()
+# async def send_echo(message: Message):
+#     try:
+#         if message.photo:
+#             await message.send_copy(chat_id=message.chat.id)
+#             photo_id = message.photo[0].file_id
+#             await message.answer(f"ID фотографии: {photo_id}")
+#         elif message.video:
+#             await message.send_copy(chat_id=message.chat.id)
+#             video_id = message.video.file_id
+#             await message.answer(f"ID видео: {video_id}")
+#         elif message.document:
+#             await message.send_copy(chat_id=message.chat.id)
+#             document_id = message.document.file_id
+#             await message.answer(f"ID документа: {document_id}")
+#     except TypeError:
+#         await message.reply(text=LEXICON_RU['no_echo'])
