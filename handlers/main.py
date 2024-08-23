@@ -11,8 +11,8 @@ from keyboards.inline.inline import get_callback_btns, get_inlineMix_btns
 from lexicon.lexicon import (LEXICON_btn_questions, LEXICON_RU, LEXICON_btn_answer_questions,
                              LEXICON_btn_helh_with_code, LEXICON_btn_entering_code, LEXICON_btn_code_do_not_work,
                              LEXICON_btn_model_phone, LEXICON_btn_back_to_questions, LEXICON_btn_logging_instruction,
-                             LEXICON_btn_no_my_question)
-from lexicon.lexicon import PDF_FILE_ANDR_INTR, PDF_FILE_IPHONE_INTR
+                             LEXICON_btn_no_my_question, LEXICON_btn_back_and_video_android, LEXICON_btn_back_and_video_iphone)
+from lexicon.lexicon import PDF_FILE_ANDR_INTR, PDF_FILE_IPHONE_INTR, VIDEO_FILE_ANDR_INTR, VIDEO_FILE_IPHONE_INTR
 
 from aiogram.filters import Command, StateFilter, or_f
 from aiogram.fsm.state import StatesGroup, State
@@ -41,27 +41,28 @@ async def start_cmd(message_or_callback: types.Union[types.Message, CallbackQuer
         await message.answer(text=LEXICON_RU["/question_list"],
                              reply_markup=get_callback_btns(btns=LEXICON_btn_questions, sizes=(1,)),
                              disable_web_page_preview=True)
-        await message.delete()
+        # await message.delete()
 
     elif isinstance(message_or_callback, types.CallbackQuery):
         callback = message_or_callback
         await callback.message.answer(text=LEXICON_RU["/question_list"],
-                                      reply_markup=get_callback_btns(btns=LEXICON_btn_questions, sizes=(1,)))
-        await callback.message.delete()
+                                      reply_markup=get_callback_btns(btns=LEXICON_btn_questions, sizes=(1,)),
+                                      disable_web_page_preview=True)
+        # await callback.message.delete()
 
 
 @user_private_router.callback_query(F.data == 'do_not_have_code')
 async def get_help_with_code(callback: types.CallbackQuery):
     await callback.message.answer(text=LEXICON_RU["/help_with_code"],
                                   reply_markup=get_callback_btns(btns=LEXICON_btn_helh_with_code, sizes=(1,)))
-    await callback.message.delete()
+    # await callback.message.delete()
 
 
 @user_private_router.callback_query(F.data == 'help_with_course')
 async def get_help_with_questions(callback: types.CallbackQuery):
     await callback.message.answer(text=LEXICON_RU["/help_with_course"],
                                   reply_markup=get_callback_btns(btns=LEXICON_btn_answer_questions, sizes=(1,)))
-    await callback.message.delete()
+    # await callback.message.delete()
 
 
 ###########################################FSM for question form#########################
@@ -76,9 +77,9 @@ class AddRequestCourse(StatesGroup):
     # product_for_change = None
 
     texts = {
-        'AddRequestCourse:question1': 'Ответьте на вопрос №1 заново. "Проблема, которую я хочу решить - ..."',
-        'AddRequestCourse:question2': 'Ответьте на вопрос №2 заново. "Моя проблема выражается в...."',
-        'AddRequestCourse:question3': 'Ответьте на вопрос №3 заново. "Результат, которого я хочу достичь — ..."',
+        'AddRequestCourse:question1': 'Ответь на вопрос №1 заново. "Проблема, которую я хочу решить - ..."',
+        'AddRequestCourse:question2': 'Ответь на вопрос №2 заново. "Моя проблема выражается в...."',
+        'AddRequestCourse:question3': 'Ответь на вопрос №3 заново. "Результат, которого я хочу достичь — ..."',
         'AddRequestCourse:contact_information': 'Этот стейт последний, поэтому...',
     }
 
@@ -91,7 +92,7 @@ async def back_step_handler(message: types.Message, state: FSMContext) -> None:
 
     if current_state == AddRequestCourse.question1:
         await message.answer(
-            'Предидущего шага нет. Напишите ОТМЕНА или ответьте на вопрос №1 - "Проблема, которую я хочу решить - ..."'
+            'Предидущего шага нет. Напиши ОТМЕНА или ответь на вопрос №1 - "Проблема, которую я хочу решить - ..."'
         )
         return
     previous = None
@@ -99,7 +100,7 @@ async def back_step_handler(message: types.Message, state: FSMContext) -> None:
         if step.state == current_state:
             await state.set_state(previous)
             await message.answer(
-                f"Ок, вы вернулись к прошлому шагу.\n{AddRequestCourse.texts[previous.state]}"
+                f"Ок, ты вернулся к прошлому шагу.\n{AddRequestCourse.texts[previous.state]}"
             )
             return
         previous = step
@@ -108,8 +109,8 @@ async def back_step_handler(message: types.Message, state: FSMContext) -> None:
 # Становимся в состояние ожидания ввода ответ на вопрос №1
 @user_private_router.callback_query(StateFilter(None), F.data == 'first_question_form')
 async def question_form(callback: types.CallbackQuery, state: FSMContext):
-    await callback.message.answer("<b>Ответьте на первый вопрос.</b>\n<i>Проблема, которую я хочу решить - ...</i>")
-    await callback.message.delete()
+    await callback.message.answer("<b>Ответь на первый вопрос.</b>\n<i>Проблема, которую я хочу решить - ...</i>")
+    # await callback.message.delete()
     await state.set_state(AddRequestCourse.question1)
 
 
@@ -132,18 +133,18 @@ async def add_question1(message: types.Message, state: FSMContext):
     if message.text:
         if len(message.text) < 5:
             await message.answer(
-                "Ответ на вопос должен быть более развернутым🤔\nВведите ответ на вопрос заново."
+                "Ответ на вопос должен быть более развернутым🤔\nВведи ответ на вопрос заново."
             )
         else:
             await state.update_data(question1=message.text)
-            await message.answer("<b>Ответьте на второй вопрос.</b>\n<i>Моя проблема выражается в....</i>")
+            await message.answer("<b>Ответь на второй вопрос.</b>\n<i>Моя проблема выражается в....</i>")
             await state.set_state(AddRequestCourse.question2)
 
 
 # Хендлер для отлова некорректных вводов для состояния question1
 @user_private_router.message(AddRequestCourse.question1)
 async def add_question1_2(message: types.Message, state: FSMContext):
-    await message.answer("Вы ввели не допустимые данные, введите текст ответа заново!")
+    await message.answer("Ты ввел не допустимые данные, введи текст ответа заново!")
 
 
 # Ловим данные для состояние question2 и потом меняем состояние на question3
@@ -152,18 +153,18 @@ async def add_question2(message: types.Message, state: FSMContext):
     if message.text:
         if len(message.text) < 5:
             await message.answer(
-                "Ответ на вопос должен быть более развернутым🤔\nВведите ответ на вопрос заново."
+                "Ответ на вопос должен быть более развернутым🤔\nВведи ответ на вопрос заново."
             )
         else:
             await state.update_data(question2=message.text)
-            await message.answer("<b>Ответьте на третий вопрос.</b>\n<i>Результат, которого я хочу достичь — ...</i>")
+            await message.answer("<b>Ответь на третий вопрос.</b>\n<i>Результат, которого я хочу достичь — ...</i>")
             await state.set_state(AddRequestCourse.question3)
 
 
 # Хендлер для отлова некорректных вводов для состояния question2
 @user_private_router.message(AddRequestCourse.question2)
 async def add_question2_2(message: types.Message, state: FSMContext):
-    await message.answer("Вы ввели не допустимые данные, введите текст ответа заново!")
+    await message.answer("Ты ввел не допустимые данные, введи текст ответа заново!")
 
 
 # Ловим данные для состояние question3
@@ -172,7 +173,7 @@ async def add_question3(message: types.Message, state: FSMContext, session: Asyn
     if message.text:
         if len(message.text) < 5:
             await message.answer(
-                "Ответ на вопос должен быть более развернутым🤔\nВведите ответ на вопрос заново."
+                "Ответ на вопос должен быть более развернутым🤔\nВведи ответ на вопрос заново."
             )
         else:
             await state.update_data(question3=message.text)
@@ -206,7 +207,7 @@ async def add_question3(message: types.Message, state: FSMContext, session: Asyn
                                                          first_name=message.from_user.first_name,
                                                          last_name=message.from_user.last_name)
                 await message.answer(
-                    "Спасибо за ваши ответы.\nНаш психолог даст тебе обратную связь"
+                    "Спасибо за твои ответы.\nНаш психолог даст тебе обратную связь"
                     " в течение несколько часов, в редких случаях в срок до 24 часов.",
                     reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
                 await state.clear()
@@ -220,7 +221,7 @@ async def add_question3(message: types.Message, state: FSMContext, session: Asyn
 # Хендлер для отлова некорректных вводов для состояния question3
 @user_private_router.message(AddRequestCourse.question3)
 async def add_question3(message: types.Message, state: FSMContext):
-    await message.answer("Вы ввели не допустимые данные, введите текст ответа заново!")
+    await message.answer("Ты ввел не допустимые данные, введи текст ответа заново!")
 
 
 ########################################  end FSM for question form###################################################################
@@ -236,8 +237,8 @@ class AddSendMail(StatesGroup):
 # cтановимся в состояние ожидания ответа sending_mail
 @user_private_router.callback_query(StateFilter(None), F.data == 'send_mail_adress')
 async def question_form(callback: types.CallbackQuery, state: FSMContext):
-    await callback.message.answer("<b>Пришлите электронный адрес, который был указан при покупке.</b>")
-    await callback.message.delete()
+    await callback.message.answer("<b>Пришли электронный адрес, который был указан при покупке.</b>")
+    # await callback.message.delete()
     await state.set_state(AddSendMail.sending_mail)
 
 
@@ -247,7 +248,7 @@ async def add_sending_mail_information(message: types.Message, state: FSMContext
     if message.text:
         if len(message.text) < 3:
             await message.answer(
-                "Думаю этого не достаточно, чтобы связаться с вами. Напишите еще раз!"
+                "Думаю этого не достаточно, чтобы связаться с тобой. Напиши еще раз!"
             )
         else:
             await state.update_data(sending_mail=message.text)
@@ -260,7 +261,8 @@ async def add_sending_mail_information(message: types.Message, state: FSMContext
 
             # Форматирование данных для отправки администратору
             formatted_data = (
-                f"<b>Новый запрос на получение кода:</b>\n"
+                f"<b>Новый запрос.</b>\n"
+                f"Не пришел код.\n"
                 f"✅Сообщение от:\n"
                 f"username пользователя:\n@{username_}\n"
                 f"Ссылка на пользователя:\n{user_link}\n"
@@ -284,15 +286,15 @@ async def add_sending_mail_information(message: types.Message, state: FSMContext
 # Хендлер для отлова некорректных вводов для состояния sending_mail
 @user_private_router.message(AddSendMail.sending_mail)
 async def add_sending_mail_information_2(message: types.Message, state: FSMContext):
-    await message.answer("Вы ввели не допустимые данные, введите текст ответа заново!")
+    await message.answer("Ты ввел не допустимые данные, введи текст ответа заново!")
 
 
 @user_private_router.callback_query(F.data == 'question_is_solved')
 async def question_form_finish_answer(callback: types.CallbackQuery):
-    await callback.message.answer("Спасибо!\n"
-                                  "Команда Mindspa рада помочь вам.",
+    await callback.message.answer("<b>Спасибо!</b>\n"
+                                  "Команда Mindspa рада помочь тебе.",
                                   reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
-    await callback.message.delete()
+    # await callback.message.delete()
 
 
 ##################################################bad code###########################
@@ -301,14 +303,14 @@ async def question_form_finish_answer(callback: types.CallbackQuery):
 async def get_answer_bad_code(callback: types.CallbackQuery):
     await callback.message.answer(text=LEXICON_RU["/bad_code"],
                                   reply_markup=get_callback_btns(btns=LEXICON_btn_code_do_not_work, sizes=(1,)))
-    await callback.message.delete()
+    # await callback.message.delete()
 
 
 @user_private_router.callback_query(F.data == 'problem_is_solved')
 async def get_answer_problem_solved(callback: types.CallbackQuery):
     await callback.message.answer(text=LEXICON_RU["/bad_code_problem_solved"],
                                   reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
-    await callback.message.delete()
+    # await callback.message.delete()
 
 
 @user_private_router.callback_query(F.data == 'problem_is_not_solved')
@@ -333,7 +335,7 @@ async def get_answer_problem_not_solved(callback: types.CallbackQuery, bot: Bot)
     # Отправка сообщения администратору
     admin_id = config.tg_bot.id_chat_admin
     await bot.send_message(chat_id=admin_id, text=formatted_data)
-    await callback.message.delete()
+    # await callback.message.delete()
 
 
 ################################################## end bad code###########################
@@ -344,14 +346,14 @@ async def get_answer_problem_not_solved(callback: types.CallbackQuery, bot: Bot)
 async def get_instruction_code(callback: types.CallbackQuery):
     await callback.message.answer(text=LEXICON_RU["/instruction_entering_code"],
                                   reply_markup=get_inlineMix_btns(btns=LEXICON_btn_entering_code, sizes=(1,)))
-    await callback.message.delete()
+    # await callback.message.delete()
 
 
 @user_private_router.callback_query(F.data == 'choose_phone_model')
 async def get_two_btn_phones(callback: types.CallbackQuery):
     await callback.message.answer(text="Выбери модель своего телефона.",
                                   reply_markup=get_callback_btns(btns=LEXICON_btn_model_phone, sizes=(2,)))
-    await callback.message.delete()
+    # await callback.message.delete()
 
 
 @user_private_router.callback_query(F.data == 'android_phone')
@@ -360,6 +362,18 @@ async def send_pdf_android(calback: CallbackQuery):
         # Отправка PDF-документа по его ID
         await calback.message.answer_document(document=PDF_FILE_ANDR_INTR,
                                               caption=LEXICON_RU['/instruction_android'],
+                                              reply_markup=get_callback_btns(btns=LEXICON_btn_back_and_video_android, sizes=(1,)))
+
+    except Exception as e:
+        await calback.message.answer(f"Произошла ошибка при отправке документа: {str(e)}")
+
+
+@user_private_router.callback_query(F.data == 'video_android')
+async def send_pdf_android(calback: CallbackQuery):
+    try:
+        # Отправка PDF-документа по его ID
+        await calback.message.answer_video(video=VIDEO_FILE_ANDR_INTR,
+                                              caption="Видеоинструкция.",
                                               reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
 
     except Exception as e:
@@ -367,11 +381,23 @@ async def send_pdf_android(calback: CallbackQuery):
 
 
 @user_private_router.callback_query(F.data == 'iphone_phone')
-async def send_pdf_android(calback: CallbackQuery):
+async def send_pdf_iphone(calback: CallbackQuery):
     try:
         # Отправка PDF-документа по его ID
         await calback.message.answer_document(document=PDF_FILE_IPHONE_INTR,
                                               caption=LEXICON_RU['/instruction_iphone'],
+                                              reply_markup=get_callback_btns(btns=LEXICON_btn_back_and_video_iphone, sizes=(1,)))
+
+    except Exception as e:
+        await calback.message.answer(f"Произошла ошибка при отправке документа: {str(e)}")
+
+
+@user_private_router.callback_query(F.data == 'video_iphone')
+async def send_video_iphone(calback: CallbackQuery):
+    try:
+        # Отправка PDF-документа по его ID
+        await calback.message.answer_video(video=VIDEO_FILE_IPHONE_INTR,
+                                              caption='Видеоинструкция.',
                                               reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
 
     except Exception as e:
@@ -387,7 +413,7 @@ async def send_pdf_android(calback: CallbackQuery):
 async def get_information_entering(callback: types.CallbackQuery):
     await callback.message.answer(text=LEXICON_RU["/instruction_entering_accaunt"],
                                   reply_markup=get_callback_btns(btns=LEXICON_btn_logging_instruction, sizes=(1,)))
-    await callback.message.delete()
+    # await callback.message.delete()
 
 
 class AddLogAccaunt(StatesGroup):
@@ -399,7 +425,7 @@ class AddLogAccaunt(StatesGroup):
 @user_private_router.callback_query(StateFilter(None), F.data == 'log_send_mail_to_admin')
 async def log_form(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.answer("<b>Пожалуйста, пришли электронный адрес, который был указан при регистрации.</b>")
-    await callback.message.delete()
+    # await callback.message.delete()
     await state.set_state(AddLogAccaunt.log_sending_mail)
 
 
@@ -409,7 +435,7 @@ async def add_sending_mail_information_log(message: types.Message, state: FSMCon
     if message.text:
         if len(message.text) < 3:
             await message.answer(
-                "Думаю этого не достаточно, чтобы связаться с вами. Напишите еще раз!"
+                "Думаю этого не достаточно, чтобы связаться с тобой. Напиши еще раз!"
             )
         else:
             await state.update_data(log_sending_mail=message.text)
@@ -422,7 +448,8 @@ async def add_sending_mail_information_log(message: types.Message, state: FSMCon
 
             # Форматирование данных для отправки администратору
             formatted_data = (
-                f"<b>Новое сообщение по проблеме 'Не могу войти в аккаунт':</b>\n"
+                f"<b>Новое сообщение.</b>\n"
+                f"Не могу войти в аккаунт.\n"
                 f"✅Сообщение от:\n"
                 f"username пользователя:\n@{username_}\n"
                 f"Ссылка на пользователя:\n{user_link}\n"
@@ -447,15 +474,15 @@ async def add_sending_mail_information_log(message: types.Message, state: FSMCon
 # Хендлер для отлова некорректных вводов для состояния log_sending_mail
 @user_private_router.message(AddLogAccaunt.log_sending_mail)
 async def add_sending_mail_information_log_2(message: types.Message, state: FSMContext):
-    await message.answer("Вы ввели не допустимые данные, введите текст ответа заново!")
+    await message.answer("Ты ввел не допустимые данные, введи текст ответа заново!")
 
 
 @user_private_router.callback_query(F.data == 'log_problem_is_solved')
 async def question_form_finish_answer(callback: types.CallbackQuery):
     await callback.message.answer("<b>Спасибо!</b>\n"
-                                  "Команда Mindspa рада помочь вам.",
+                                  "Команда Mindspa рада помочь тебе.",
                                   reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
-    await callback.message.delete()
+    # await callback.message.delete()
 
 
 ################################################## end I can't log into my account###########################
@@ -466,7 +493,7 @@ async def question_form_finish_answer(callback: types.CallbackQuery):
 async def get_no_my_question(callback: types.CallbackQuery):
     await callback.message.answer(text=LEXICON_RU["/no_my_question"],
                                   reply_markup=get_callback_btns(btns=LEXICON_btn_no_my_question, sizes=(1,)))
-    await callback.message.delete()
+    # await callback.message.delete()
 
 
 class AddNewQuestion(StatesGroup):
@@ -477,8 +504,8 @@ class AddNewQuestion(StatesGroup):
 # cтановимся в состояние ожидания ответа new_question
 @user_private_router.callback_query(StateFilter(None), F.data == 'write_new_question')
 async def get_form_new_question(callback: types.CallbackQuery, state: FSMContext):
-    await callback.message.answer("<b>Напишите какой у тебя вопрос.</b>")
-    await callback.message.delete()
+    await callback.message.answer("<b>Напиши какой у тебя вопрос.</b>")
+    # await callback.message.delete()
     await state.set_state(AddNewQuestion.new_question)
 
 
@@ -501,7 +528,8 @@ async def add_new_question_information(message: types.Message, state: FSMContext
 
             # Форматирование данных для отправки администратору
             formatted_data = (
-                f"<b>Новое сообщение. 'В списке нет моего вопроса.':</b>\n"
+                f"<b>Новое сообщение.</b>\n"
+                f"В списке нет моего вопроса.\n"
                 f"✅Сообщение от:\n"
                 f"username пользователя:\n@{username_}\n"
                 f"Ссылка на пользователя:\n{user_link}\n"
@@ -525,23 +553,23 @@ async def add_new_question_information(message: types.Message, state: FSMContext
 # Хендлер для отлова некорректных вводов для состояния new_question
 @user_private_router.message(AddNewQuestion.new_question)
 async def add_new_question_information_2(message: types.Message, state: FSMContext):
-    await message.answer("Вы ввели не допустимые данные, введите текст ответа заново!")
+    await message.answer("Ты ввел не допустимые данные, введи текст ответа заново!")
 
 ############################################################################
-# @user_private_router.message()
-# async def send_echo(message: Message):
-#     try:
-#         if message.photo:
-#             await message.send_copy(chat_id=message.chat.id)
-#             photo_id = message.photo[0].file_id
-#             await message.answer(f"ID фотографии: {photo_id}")
-#         elif message.video:
-#             await message.send_copy(chat_id=message.chat.id)
-#             video_id = message.video.file_id
-#             await message.answer(f"ID видео: {video_id}")
-#         elif message.document:
-#             await message.send_copy(chat_id=message.chat.id)
-#             document_id = message.document.file_id
-#             await message.answer(f"ID документа: {document_id}")
-#     except TypeError:
-#         await message.reply(text=LEXICON_RU['no_echo'])
+@user_private_router.message()
+async def send_echo(message: Message):
+    try:
+        if message.photo:
+            await message.send_copy(chat_id=message.chat.id)
+            photo_id = message.photo[0].file_id
+            await message.answer(f"ID фотографии: {photo_id}")
+        elif message.video:
+            await message.send_copy(chat_id=message.chat.id)
+            video_id = message.video.file_id
+            await message.answer(f"ID видео: {video_id}")
+        elif message.document:
+            await message.send_copy(chat_id=message.chat.id)
+            document_id = message.document.file_id
+            await message.answer(f"ID документа: {document_id}")
+    except TypeError:
+        await message.reply(text=LEXICON_RU['no_echo'])
