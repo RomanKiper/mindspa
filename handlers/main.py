@@ -9,9 +9,10 @@ from config_data.config import Config, load_config
 from filters.chat_types import ChatTypeFilter
 from keyboards.inline.inline import get_callback_btns, get_inlineMix_btns
 from lexicon.lexicon import (LEXICON_btn_questions, LEXICON_RU, LEXICON_btn_answer_questions,
-                             LEXICON_btn_helh_with_code, LEXICON_btn_entering_code, LEXICON_btn_code_do_not_work,
+                             LEXICON_btn_helh_with_code, LEXICON_btn_code_do_not_work,
                              LEXICON_btn_model_phone, LEXICON_btn_back_to_questions, LEXICON_btn_logging_instruction,
-                             LEXICON_btn_no_my_question, LEXICON_btn_back_and_video_android, LEXICON_btn_back_and_video_iphone)
+                             LEXICON_btn_no_my_question, LEXICON_btn_back_and_video_android,
+                             LEXICON_btn_back_and_video_iphone)
 from lexicon.lexicon import PDF_FILE_ANDR_INTR, PDF_FILE_IPHONE_INTR, VIDEO_FILE_ANDR_INTR, VIDEO_FILE_IPHONE_INTR
 
 from aiogram.filters import Command, StateFilter, or_f
@@ -345,14 +346,8 @@ async def get_answer_problem_not_solved(callback: types.CallbackQuery, bot: Bot)
 @user_private_router.callback_query(F.data == 'do_not_now_how_to_enter_code')
 async def get_instruction_code(callback: types.CallbackQuery):
     await callback.message.answer(text=LEXICON_RU["/instruction_entering_code"],
-                                  reply_markup=get_inlineMix_btns(btns=LEXICON_btn_entering_code, sizes=(1,)))
-    # await callback.message.delete()
-
-
-@user_private_router.callback_query(F.data == 'choose_phone_model')
-async def get_two_btn_phones(callback: types.CallbackQuery):
-    await callback.message.answer(text="Выбери модель своего телефона.",
-                                  reply_markup=get_callback_btns(btns=LEXICON_btn_model_phone, sizes=(2,)))
+                                  reply_markup=get_inlineMix_btns(btns=LEXICON_btn_model_phone, sizes=(2,)),
+                                  disable_web_page_preview=True)
     # await callback.message.delete()
 
 
@@ -362,7 +357,8 @@ async def send_pdf_android(calback: CallbackQuery):
         # Отправка PDF-документа по его ID
         await calback.message.answer_document(document=PDF_FILE_ANDR_INTR,
                                               caption=LEXICON_RU['/instruction_android'],
-                                              reply_markup=get_callback_btns(btns=LEXICON_btn_back_and_video_android, sizes=(1,)))
+                                              reply_markup=get_callback_btns(btns=LEXICON_btn_back_and_video_android,
+                                                                             sizes=(1,)))
 
     except Exception as e:
         await calback.message.answer(f"Произошла ошибка при отправке документа: {str(e)}")
@@ -373,8 +369,8 @@ async def send_pdf_android(calback: CallbackQuery):
     try:
         # Отправка PDF-документа по его ID
         await calback.message.answer_video(video=VIDEO_FILE_ANDR_INTR,
-                                              caption="Видеоинструкция.",
-                                              reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
+                                           caption="Видеоинструкция.",
+                                           reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
 
     except Exception as e:
         await calback.message.answer(f"Произошла ошибка при отправке документа: {str(e)}")
@@ -386,7 +382,8 @@ async def send_pdf_iphone(calback: CallbackQuery):
         # Отправка PDF-документа по его ID
         await calback.message.answer_document(document=PDF_FILE_IPHONE_INTR,
                                               caption=LEXICON_RU['/instruction_iphone'],
-                                              reply_markup=get_callback_btns(btns=LEXICON_btn_back_and_video_iphone, sizes=(1,)))
+                                              reply_markup=get_callback_btns(btns=LEXICON_btn_back_and_video_iphone,
+                                                                             sizes=(1,)))
 
     except Exception as e:
         await calback.message.answer(f"Произошла ошибка при отправке документа: {str(e)}")
@@ -397,8 +394,8 @@ async def send_video_iphone(calback: CallbackQuery):
     try:
         # Отправка PDF-документа по его ID
         await calback.message.answer_video(video=VIDEO_FILE_IPHONE_INTR,
-                                              caption='Видеоинструкция.',
-                                              reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
+                                           caption='Видеоинструкция.',
+                                           reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
 
     except Exception as e:
         await calback.message.answer(f"Произошла ошибка при отправке документа: {str(e)}")
@@ -554,6 +551,7 @@ async def add_new_question_information(message: types.Message, state: FSMContext
 @user_private_router.message(AddNewQuestion.new_question)
 async def add_new_question_information_2(message: types.Message, state: FSMContext):
     await message.answer("Ты ввел не допустимые данные, введи текст ответа заново!")
+
 
 ############################################################################
 @user_private_router.message()
