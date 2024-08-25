@@ -29,10 +29,7 @@ user_private_router = Router()
 user_private_router.message.filter(ChatTypeFilter(['private']))
 
 
-# user_private_router.callback_query.filter(ChatTypeFilter(['private']))
-
-
-@user_private_router.message(F.text.lower().in_({'вопросы', 'вопрос', "questions"}))
+@user_private_router.message(F.text.lower().in_({'вопросы', 'вопрос', "questions", "старт", "start", "начать"}))
 @user_private_router.message(CommandStart())
 @user_private_router.message(Command('questions'))
 @user_private_router.callback_query(F.data == 'main_list_questions')
@@ -554,20 +551,20 @@ async def add_new_question_information_2(message: types.Message, state: FSMConte
 
 
 ############################################################################
-@user_private_router.message()
-async def send_echo(message: Message):
-    try:
-        if message.photo:
-            await message.send_copy(chat_id=message.chat.id)
-            photo_id = message.photo[0].file_id
-            await message.answer(f"ID фотографии: {photo_id}")
-        elif message.video:
-            await message.send_copy(chat_id=message.chat.id)
-            video_id = message.video.file_id
-            await message.answer(f"ID видео: {video_id}")
-        elif message.document:
-            await message.send_copy(chat_id=message.chat.id)
-            document_id = message.document.file_id
-            await message.answer(f"ID документа: {document_id}")
-    except TypeError:
-        await message.reply(text=LEXICON_RU['no_echo'])
+# @user_private_router.message()
+# async def send_echo(message: Message):
+#     try:
+#         if message.photo:
+#             await message.send_copy(chat_id=message.chat.id)
+#             photo_id = message.photo[0].file_id
+#             await message.answer(f"ID фотографии: {photo_id}")
+#         elif message.video:
+#             await message.send_copy(chat_id=message.chat.id)
+#             video_id = message.video.file_id
+#             await message.answer(f"ID видео: {video_id}")
+#         elif message.document:
+#             await message.send_copy(chat_id=message.chat.id)
+#             document_id = message.document.file_id
+#             await message.answer(f"ID документа: {document_id}")
+#     except TypeError:
+#         await message.reply(text=LEXICON_RU['no_echo'])

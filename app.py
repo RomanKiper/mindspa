@@ -7,6 +7,7 @@ from dotenv import find_dotenv, load_dotenv
 load_dotenv(find_dotenv())
 from database.engine import create_db, session_maker, drop_db
 from handlers.main import user_private_router
+from handlers.admin.admin_main import admin_router
 from keyboards.main_menu import set_main_menu
 from middlewares.db import DataBaseSession
 
@@ -17,6 +18,7 @@ bot = Bot(token=config.tg_bot.token, parse_mode="HTML")
 dp = Dispatcher()
 
 dp.include_router(user_private_router)
+dp.include_router(admin_router)
 
 
 async def on_startup(bot):
