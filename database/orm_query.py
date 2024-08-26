@@ -2,7 +2,7 @@ from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from database.models import User, CourseRequest
+from database.models import User, CourseRequest, CodeMissin, CanNotEnterAccaunt, BadCode
 
 
 ##################### Добавляем юзера в БД #####################################
@@ -56,3 +56,16 @@ async def orm_add_request_course_information(session: AsyncSession, data: dict, 
 #     query = delete(Notes).where(Notes.id == note_id)
 #     await session.execute(query)
 #     await session.commit()
+
+
+async def orm_add_code_missing_information(session: AsyncSession, data: dict, user_id: int,
+                                             username: str, last_name: str, first_name: str):
+    obj = CodeMissin(
+        mail_user=data['sending_mail'],
+        user_id=user_id,
+        username=username,
+        last_name=last_name,
+        first_name=first_name
+    )
+    session.add(obj)
+    await session.commit()

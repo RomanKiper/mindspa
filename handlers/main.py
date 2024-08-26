@@ -3,7 +3,7 @@ from aiogram.filters import CommandStart, Command
 from aiogram.types import CallbackQuery, InlineKeyboardButton, Message
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from database.orm_query import orm_add_request_course_information
+from database.orm_query import orm_add_request_course_information, orm_add_code_missing_information
 from config_data.config import Config, load_config
 
 from filters.chat_types import ChatTypeFilter
@@ -225,7 +225,7 @@ async def add_question3(message: types.Message, state: FSMContext):
 ########################################  end FSM for question form###################################################################
 
 
-#####################################FSM for code form ######################################################
+#####################################FSM for code missing form ######################################################
 
 class AddSendMail(StatesGroup):
     # Шаги состояний
@@ -272,6 +272,12 @@ async def add_sending_mail_information(message: types.Message, state: FSMContext
             await bot.send_message(chat_id=admin_id, text=formatted_data)
 
             try:
+                await orm_add_code_missing_information(session=session,
+                                                       data=data,
+                                                       user_id=message.from_user.id,
+                                                       username=message.from_user.username,
+                                                       first_name=message.from_user.first_name,
+                                                       last_name=message.from_user.last_name)
                 await message.answer(text=LEXICON_RU['/answer_about_code'],
                                      reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
                 await state.clear()
