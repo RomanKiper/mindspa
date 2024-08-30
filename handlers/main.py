@@ -76,11 +76,10 @@ class AddRequestCourse(StatesGroup):
 
     texts = {
         'AddRequestCourse:question1': 'Ответь на вопрос №1 заново. "Проблема, которую я хочу решить - ..."',
-        'AddRequestCourse:question2': 'Ответь на вопрос №2 заново. "Моя проблема выражается в...."',
+        'AddRequestCourse:question2': 'Ответь на вопрос №2 заново. "Как проявляется твоя проблема в мыслях, чувствах, ощущениях, поведении?"',
         'AddRequestCourse:question3': 'Ответь на вопрос №3 заново. "Результат, которого я хочу достичь — ..."',
         'AddRequestCourse:contact_information': 'Этот стейт последний, поэтому...',
     }
-
 
 # Вернутся на шаг назад (на прошлое состояние)
 @user_private_router.message(StateFilter("*"), Command("назад"))
@@ -90,7 +89,7 @@ async def back_step_handler(message: types.Message, state: FSMContext) -> None:
 
     if current_state == AddRequestCourse.question1:
         await message.answer(
-            'Предидущего шага нет. Напиши ОТМЕНА или ответь на вопрос №1 - "Проблема, которую я хочу решить - ..."'
+            'Предидущего шага нет. Напиши ОТМЕНА или ответь на первый вопрос - "Проблема, которую я хочу решить - ..."'
         )
         return
     previous = None
@@ -135,7 +134,7 @@ async def add_question1(message: types.Message, state: FSMContext):
             )
         else:
             await state.update_data(question1=message.text)
-            await message.answer("<b>Ответь на второй вопрос.</b>\n<i>Моя проблема выражается в....</i>")
+            await message.answer("<b>Ответь на второй вопрос.</b>\n<i>Как проявляется твоя проблема в мыслях, чувствах, ощущениях, поведении?</i>")
             await state.set_state(AddRequestCourse.question2)
 
 
@@ -189,7 +188,7 @@ async def add_question3(message: types.Message, state: FSMContext, session: Asyn
                 f"username пользователя:\n@{username_}\n"
                 f"Ссылка на пользователя:\n{user_link}\n"
                 f"✅1.Проблема, которую я хочу решить — ...\n{data.get('question1')}\n"
-                f"✅2.Моя проблема выражается в....\n{data.get('question2')}\n"
+                f"✅2.Как проявляется твоя проблема в мыслях, чувствах, ощущениях, поведении?\n{data.get('question2')}\n"
                 f"✅3.Результат, которого я хочу достичь — ...\n{data.get('question3')}\n"
             )
 
