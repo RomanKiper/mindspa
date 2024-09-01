@@ -1,4 +1,7 @@
 from aiogram import types, Router, F, Bot
+import pandas as pd
+
+from aiogram.types import FSInputFile
 from aiogram.filters import CommandStart, Command
 from aiogram.types import CallbackQuery, InlineKeyboardButton, Message
 from sqlalchemy import select
@@ -8,9 +11,12 @@ from filters.chat_types import ChatTypeFilter
 from filters.is_admin import IsAdminMsg
 from keyboards.inline.inline import get_callback_btns, get_inlineMix_btns
 from lexicon.lexicon import LEXICON_btn_main_admin_menu, LEXICON_ADMIN, LEXICON_btn_BACK_main_admin_menu
-
+from database.orm_query import orm_get_users
+from database.models import User
 from aiogram.filters import Command, or_f
 from dotenv import find_dotenv, load_dotenv
+
+from sqlalchemy.future import select
 
 load_dotenv(find_dotenv())
 config: Config = load_config()
@@ -36,3 +42,39 @@ async def admin_handler_caccback(callback: CallbackQuery):
 async def get_admin_instruction(callback: CallbackQuery):
     await callback.message.answer(text=LEXICON_ADMIN["/instruction_description"],
                                   reply_markup=get_callback_btns(btns=LEXICON_btn_BACK_main_admin_menu))
+
+
+@admin_router.callback_query(F.data == "report_admin")
+async def get_admin_report(callback: CallbackQuery, session: AsyncSession):
+    # Получение всех пользователей из базы данных
+    result = await session.execute(select(User))
+    users = result.scalars().all()
+
+    # Создание списка словарей, где ключи соответствуют столбцам
+    data = [
+        {
+            "ID": user.id,
+            "User ID": user.user_id,
+            "First Name": user.first_name,
+            "Last Name": user.last_name,
+            "Username": user.username,
+            "Phone": user.phone
+        }
+        for user in users
+    ]
+
+    # Создание DataFrame из списка словарей
+    df = pd.DataFrame(data)
+    print(df)
+
+    # Указание имени файла
+    file_name = "users_data.xlsx"
+
+    # Сохранение DataFrame в Excel-файл
+    df.to_excel(file_name, index=False)
+
+    # Создание InputFile с использованием пути к файлу
+    input_file = FSInputFile(file_name)
+
+    # Отправка файла
+    await callback.message.answer_document(input_file)

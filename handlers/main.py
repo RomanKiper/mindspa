@@ -3,7 +3,8 @@ from aiogram.filters import CommandStart, Command
 from aiogram.types import CallbackQuery, InlineKeyboardButton, Message
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from database.orm_query import orm_add_request_course_information, orm_add_code_missing_information
+from database.orm_query import (orm_add_request_course_information, orm_add_code_missing_information,
+                                orm_add_user, )
 from config_data.config import Config, load_config
 
 from filters.chat_types import ChatTypeFilter
@@ -36,6 +37,12 @@ user_private_router.message.filter(ChatTypeFilter(['private']))
 async def start_cmd(message_or_callback: types.Union[types.Message, CallbackQuery], session: AsyncSession):
     if isinstance(message_or_callback, types.Message):
         message = message_or_callback
+        await orm_add_user(session,
+                           user_id=message.from_user.id,
+                           username=message.from_user.username,
+                           first_name=message.from_user.first_name,
+                           last_name=message.from_user.last_name,
+                           )
         await message.answer(text=LEXICON_RU["/question_list"],
                              reply_markup=get_callback_btns(btns=LEXICON_btn_questions, sizes=(1,)),
                              disable_web_page_preview=True)

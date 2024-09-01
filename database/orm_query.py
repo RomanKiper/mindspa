@@ -24,6 +24,13 @@ async def orm_add_user(
         await session.commit()
 
 
+async def orm_get_users(session: AsyncSession, user_id: int):
+    query = select(User).where(User.user_id == user_id)
+    result = await session.execute(query)
+    return result.scalars().all()
+
+
+
 async def orm_add_request_course_information(session: AsyncSession, data: dict, user_id: int,
                                              username: str, last_name: str, first_name: str):
     obj = CourseRequest(
