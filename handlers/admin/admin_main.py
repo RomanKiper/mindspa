@@ -12,7 +12,7 @@ from filters.is_admin import IsAdminMsg
 from keyboards.inline.inline import get_callback_btns, get_inlineMix_btns
 from lexicon.lexicon import LEXICON_btn_main_admin_menu, LEXICON_ADMIN, LEXICON_btn_BACK_main_admin_menu
 from database.orm_query import orm_get_users
-from database.models import User
+from database.models import User, CourseRequest
 from aiogram.filters import Command, or_f
 from dotenv import find_dotenv, load_dotenv
 
@@ -44,8 +44,8 @@ async def get_admin_instruction(callback: CallbackQuery):
                                   reply_markup=get_callback_btns(btns=LEXICON_btn_BACK_main_admin_menu))
 
 
-@admin_router.callback_query(F.data == "report_admin")
-async def get_admin_report(callback: CallbackQuery, session: AsyncSession):
+@admin_router.callback_query(F.data == "users_all_list")
+async def get_users_list(callback: CallbackQuery, session: AsyncSession):
     # Получение всех пользователей из базы данных
     result = await session.execute(select(User))
     users = result.scalars().all()
@@ -55,10 +55,10 @@ async def get_admin_report(callback: CallbackQuery, session: AsyncSession):
         {
             "ID": user.id,
             "User ID": user.user_id,
-            "First Name": user.first_name,
-            "Last Name": user.last_name,
-            "Username": user.username,
-            "Phone": user.phone
+            "ИМЯ/First Name": user.first_name,
+            "ФАМИЛИЯ/Last Name": user.last_name,
+            "ЛОГИН/Username": user.username,
+            "НОМЕР ТЕЛ./Phone": user.phone
         }
         for user in users
     ]
@@ -69,6 +69,44 @@ async def get_admin_report(callback: CallbackQuery, session: AsyncSession):
 
     # Указание имени файла
     file_name = "users_data.xlsx"
+
+    # Сохранение DataFrame в Excel-файл
+    df.to_excel(file_name, index=False)
+
+    # Создание InputFile с использованием пути к файлу
+    input_file = FSInputFile(file_name)
+
+    # Отправка файла
+    await callback.message.answer_document(input_file)
+
+
+@admin_router.callback_query(F.data == "report_users")
+async def get_admin_report(callback: CallbackQuery, session: AsyncSession):
+    # Получение всех пользователей из базы данных
+    result_help_with_coure = await session.execute(select(CourseRequest))
+    requests = result_help_with_coure.scalars().all()
+
+    # Создание списка словарей, где ключи соответствуют столбцам
+    data = [
+        {
+            "ID": req.id,
+            "User ID": req.user_id,
+            "ИМЯ/First Name": req.first_name,
+            "ФАМИЛИЯ/Last Name": req.last_name,
+            "ЛОГИН/Username": req.username,
+            "question1": req.question1,
+            "question2": req.question2,
+            "question3": req.question3,
+        }
+        for req in requests
+    ]
+
+    # Создание DataFrame из списка словарей
+    df = pd.DataFrame(data)
+    print(df)
+
+    # Указание имени файла
+    file_name = "report.xlsx"
 
     # Сохранение DataFrame в Excel-файл
     df.to_excel(file_name, index=False)

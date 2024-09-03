@@ -64,7 +64,8 @@ LEXICON_btn_no_my_question: dict[str, str] = {
 }
 
 LEXICON_btn_main_admin_menu: dict[str, str] = {
-    "Отчет": "report_admin",
+    "Пользователи": "users_all_list",
+    "Отчет действий": "report_users",
     "Инструкция": "instruction_admin",
 }
 

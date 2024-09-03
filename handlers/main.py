@@ -4,7 +4,8 @@ from aiogram.types import CallbackQuery, InlineKeyboardButton, Message
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.orm_query import (orm_add_request_course_information, orm_add_code_missing_information,
-                                orm_add_user, )
+                                orm_add_user, orm_add_information_cannotlogin, orm_add_information_whereentercode,
+                                orm_add_info_badcode, orm_add_info_noquestion)
 from config_data.config import Config, load_config
 
 from filters.chat_types import ChatTypeFilter
@@ -324,10 +325,14 @@ async def get_answer_problem_solved(callback: types.CallbackQuery):
 
 
 @user_private_router.callback_query(F.data == 'problem_is_not_solved')
-async def get_answer_problem_not_solved(callback: types.CallbackQuery, bot: Bot):
+async def get_answer_problem_not_solved(callback: types.CallbackQuery, bot: Bot, session: AsyncSession):
+    await orm_add_info_badcode(session=session,
+                               user_id=callback.from_user.id,
+                               username=callback.from_user.username,
+                               first_name=callback.from_user.first_name,
+                               last_name=callback.from_user.last_name)
     await callback.message.answer(text=LEXICON_RU["/bad_code_problem_not_solved"],
                                   reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
-
     user_id = callback.from_user.id
     full_name = callback.from_user.full_name
     username_ = callback.from_user.username
@@ -353,7 +358,12 @@ async def get_answer_problem_not_solved(callback: types.CallbackQuery, bot: Bot)
 ################################################## entering code instruction ##############
 
 @user_private_router.callback_query(F.data == 'do_not_now_how_to_enter_code')
-async def get_instruction_code(callback: types.CallbackQuery):
+async def get_instruction_code(callback: types.CallbackQuery, session: AsyncSession):
+    await orm_add_information_whereentercode(session=session,
+                                           user_id=callback.from_user.id,
+                                           username=callback.from_user.username,
+                                           first_name=callback.from_user.first_name,
+                                           last_name=callback.from_user.last_name)
     await callback.message.answer(text=LEXICON_RU["/instruction_entering_code"],
                                   reply_markup=get_inlineMix_btns(btns=LEXICON_btn_model_phone, sizes=(2,)),
                                   disable_web_page_preview=True)
@@ -467,6 +477,12 @@ async def add_sending_mail_information_log(message: types.Message, state: FSMCon
             await bot.send_message(chat_id=admin_id, text=formatted_data)
 
             try:
+                await orm_add_information_cannotlogin(session=session,
+                                                       data=data,
+                                                       user_id=message.from_user.id,
+                                                       username=message.from_user.username,
+                                                       first_name=message.from_user.first_name,
+                                                       last_name=message.from_user.last_name)
                 await message.answer(text=LEXICON_RU['/log_code_answer'],
                                      reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
 
@@ -545,8 +561,13 @@ async def add_new_question_information(message: types.Message, state: FSMContext
             # Отправка сообщения администратору
             admin_id = config.tg_bot.id_chat_admin
             await bot.send_message(chat_id=admin_id, text=formatted_data)
-
             try:
+                await orm_add_info_noquestion(session=session,
+                                                       data=data,
+                                                       user_id=message.from_user.id,
+                                                       username=message.from_user.username,
+                                                       first_name=message.from_user.first_name,
+                                                       last_name=message.from_user.last_name)
                 await message.answer(text=LEXICON_RU['/finish_answer'],
                                      reply_markup=get_callback_btns(btns=LEXICON_btn_back_to_questions))
                 await state.clear()
