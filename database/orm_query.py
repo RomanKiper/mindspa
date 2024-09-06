@@ -33,9 +33,10 @@ async def orm_get_users(session: AsyncSession, user_id: int):
 
 async def orm_add_request_course_information(session: AsyncSession, data: dict, user_id: int,
                                              username: str, last_name: str, first_name: str):
-    query = delete(CourseRequest).where(CourseRequest.user_id == user_id)
-    await session.execute(query)
-    await session.commit()
+    # Блок кода для удаления старой записи.
+    # query = delete(CourseRequest).where(CourseRequest.user_id == user_id)
+    # await session.execute(query)
+    # await session.commit()
     obj = CourseRequest(
         question1=data['question1'],
         question2=data['question2'],
@@ -51,9 +52,10 @@ async def orm_add_request_course_information(session: AsyncSession, data: dict, 
 
 async def orm_add_code_missing_information(session: AsyncSession, data: dict, user_id: int,
                                            username: str, last_name: str, first_name: str):
-    query = delete(CodeMissin).where(CodeMissin.user_id == user_id)
-    await session.execute(query)
-    await session.commit()
+    # Блок кода для удаления старой записи.
+    # query = delete(CodeMissin).where(CodeMissin.user_id == user_id)
+    # await session.execute(query)
+    # await session.commit()
     obj = CodeMissin(
         mail_user=data['sending_mail'],
         user_id=user_id,
@@ -66,10 +68,11 @@ async def orm_add_code_missing_information(session: AsyncSession, data: dict, us
 
 
 async def orm_add_information_whereentercode(session: AsyncSession, user_id: int,
-                                           username: str, last_name: str, first_name: str):
-    query = delete(WhereEnterCode).where(WhereEnterCode.user_id == user_id)
-    await session.execute(query)
-    await session.commit()
+                                             username: str, last_name: str, first_name: str):
+    # Блок кода для удаления старой записи.
+    # query = delete(WhereEnterCode).where(WhereEnterCode.user_id == user_id)
+    # await session.execute(query)
+    # await session.commit()
     obj = WhereEnterCode(
         user_id=user_id,
         username=username,
@@ -82,9 +85,10 @@ async def orm_add_information_whereentercode(session: AsyncSession, user_id: int
 
 async def orm_add_info_badcode(session: AsyncSession, user_id: int,
                                username: str, last_name: str, first_name: str):
-    query = delete(BadCode).where(BadCode.user_id == user_id)
-    await session.execute(query)
-    await session.commit()
+    # Блок кода для удаления старой записи.
+    # query = delete(BadCode).where(BadCode.user_id == user_id)
+    # await session.execute(query)
+    # await session.commit()
     obj = BadCode(
         user_id=user_id,
         username=username,
@@ -96,10 +100,11 @@ async def orm_add_info_badcode(session: AsyncSession, user_id: int,
 
 
 async def orm_add_info_noquestion(session: AsyncSession, data: dict, user_id: int,
-                                           username: str, last_name: str, first_name: str):
-    query = delete(NoQuestion).where(NoQuestion.user_id == user_id)
-    await session.execute(query)
-    await session.commit()
+                                  username: str, last_name: str, first_name: str):
+    # Блок кода для удаления старой записи.
+    # query = delete(NoQuestion).where(NoQuestion.user_id == user_id)
+    # await session.execute(query)
+    # await session.commit()
     obj = NoQuestion(
         question_user=data['new_question'],
         user_id=user_id,
@@ -113,9 +118,10 @@ async def orm_add_info_noquestion(session: AsyncSession, data: dict, user_id: in
 
 async def orm_add_information_cannotlogin(session: AsyncSession, data: dict, user_id: int,
                                           username: str, last_name: str, first_name: str):
-    query = delete(CanNotEnterAccaunt).where(CanNotEnterAccaunt.user_id == user_id)
-    await session.execute(query)
-    await session.commit()
+    # Блок кода для удаления старой записи.
+    # query = delete(CanNotEnterAccaunt).where(CanNotEnterAccaunt.user_id == user_id)
+    # await session.execute(query)
+    # await session.commit()
     obj = CanNotEnterAccaunt(
         mail_user=data['log_sending_mail'],
         user_id=user_id,

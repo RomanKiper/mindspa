@@ -57,9 +57,9 @@ async def get_users_list(callback: CallbackQuery, session: AsyncSession):
         {
             "ID": user.id,
             "User ID": user.user_id,
-            "ИМЯ/First Name": user.first_name,
-            "ФАМИЛИЯ/Last Name": user.last_name,
-            "ЛОГИН/Username": user.username,
+            "ИМЯ": user.first_name,
+            "ФАМИЛИЯ": user.last_name,
+            "ЛОГИН": user.username,
             "НОМЕР ТЕЛ./Phone": user.phone
         }
         for user in users
@@ -107,6 +107,8 @@ async def get_admin_report(callback: CallbackQuery, session: AsyncSession):
     # Получение данных по проблеме моего вопроса нет в списке
     result_noquestion = await session.execute(select(NoQuestion))
     noquestion_request = result_noquestion.scalars().all()
+
+
 
     # Создание списка словарей, где ключи соответствуют столбцам
     data_course = [
