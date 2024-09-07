@@ -1,5 +1,6 @@
 from aiogram import types, Router, F, Bot
 import pandas as pd
+from datetime import timedelta
 
 from aiogram.types import FSInputFile
 from aiogram.filters import CommandStart, Command
@@ -18,6 +19,11 @@ from aiogram.filters import Command, or_f
 from dotenv import find_dotenv, load_dotenv
 
 from sqlalchemy.future import select
+
+from openpyxl.utils import get_column_letter
+from openpyxl.styles import Alignment
+
+
 
 load_dotenv(find_dotenv())
 config: Config = load_config()
@@ -67,13 +73,30 @@ async def get_users_list(callback: CallbackQuery, session: AsyncSession):
 
     # Создание DataFrame из списка словарей
     df = pd.DataFrame(data)
-    print(df)
 
     # Указание имени файла
     file_name = "users_data.xlsx"
 
-    # Сохранение DataFrame в Excel-файл
-    df.to_excel(file_name, index=False)
+
+    # Максимальная ширина столбца (например, 30 символов)
+    MAX_COLUMN_WIDTH = 30
+
+    # Сохранение DataFrame в Excel-файл с изменением ширины столбцов и переносом текста
+    with pd.ExcelWriter(file_name, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False)
+        worksheet = writer.sheets['Sheet1']
+
+        # Настройка ширины столбцов и перенос текста
+        for column_cells in worksheet.columns:
+            max_length = max(len(str(cell.value)) for cell in column_cells)
+            adjusted_width = min(max_length + 2, MAX_COLUMN_WIDTH)  # Ограничение ширины
+            column_letter = get_column_letter(column_cells[0].column)
+            worksheet.column_dimensions[column_letter].width = adjusted_width
+
+        # Перенос текста для всех ячеек
+        for row in worksheet.iter_rows():
+            for cell in row:
+                cell.alignment = Alignment(wrap_text=True)
 
     # Создание InputFile с использованием пути к файлу
     input_file = FSInputFile(file_name)
@@ -108,12 +131,15 @@ async def get_admin_report(callback: CallbackQuery, session: AsyncSession):
     result_noquestion = await session.execute(select(NoQuestion))
     noquestion_request = result_noquestion.scalars().all()
 
+    # Функция для добавления +3 часов к UTC времени
+    def adjust_time(created_time):
+        return created_time + timedelta(hours=3)
 
 
     # Создание списка словарей, где ключи соответствуют столбцам
     data_course = [
         {
-            "Дата создания": req.created,
+            "Дата создания": adjust_time(req.created),  # Добавляем +3 часа
             "Проблема": "Помощь с подбором курса",
             "User ID": req.user_id,
             "ИМЯ": req.first_name,
@@ -128,7 +154,7 @@ async def get_admin_report(callback: CallbackQuery, session: AsyncSession):
 
     data_code_missing = [
         {
-            "Дата создания": req.created,
+            "Дата создания": adjust_time(req.created),  # Добавляем +3 часа
             "Проблема": "Не пришел код",
             "User ID": req.user_id,
             "ИМЯ": req.first_name,
@@ -141,7 +167,7 @@ async def get_admin_report(callback: CallbackQuery, session: AsyncSession):
 
     data_where_entercode = [
         {
-            "Дата создания": req.created,
+            "Дата создания": adjust_time(req.created),  # Добавляем +3 часа
             "Проблема": "Куда вводить код",
             "User ID": req.user_id,
             "ИМЯ": req.first_name,
@@ -153,7 +179,7 @@ async def get_admin_report(callback: CallbackQuery, session: AsyncSession):
 
     data_badcode = [
         {
-            "Дата создания": req.created,
+            "Дата создания": adjust_time(req.created),  # Добавляем +3 часа
             "Проблема": "Не работает код",
             "User ID": req.user_id,
             "ИМЯ": req.first_name,
@@ -165,7 +191,7 @@ async def get_admin_report(callback: CallbackQuery, session: AsyncSession):
 
     data_cannot_enter = [
         {
-            "Дата создания": req.created,
+            "Дата создания": adjust_time(req.created),  # Добавляем +3 часа
             "Проблема": "Не могу войти в аккаунт",
             "User ID": req.user_id,
             "ИМЯ": req.first_name,
@@ -178,7 +204,7 @@ async def get_admin_report(callback: CallbackQuery, session: AsyncSession):
 
     data_noquestion = [
         {
-            "Дата создания": req.created,
+            "Дата создания": adjust_time(req.created),  # Добавляем +3 часа
             "Проблема": "Нет моего вопроса",
             "User ID": req.user_id,
             "ИМЯ": req.first_name,
@@ -201,8 +227,25 @@ async def get_admin_report(callback: CallbackQuery, session: AsyncSession):
     # Указание имени файла
     file_name = "report.xlsx"
 
-    # Сохранение DataFrame в Excel-файл
-    df.to_excel(file_name, index=False)
+    # Максимальная ширина столбца (например, 30 символов)
+    MAX_COLUMN_WIDTH = 30
+
+    # Сохранение DataFrame в Excel-файл с изменением ширины столбцов и переносом текста
+    with pd.ExcelWriter(file_name, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False)
+        worksheet = writer.sheets['Sheet1']
+
+        # Настройка ширины столбцов и перенос текста
+        for column_cells in worksheet.columns:
+            max_length = max(len(str(cell.value)) for cell in column_cells)
+            adjusted_width = min(max_length + 2, MAX_COLUMN_WIDTH)  # Ограничение ширины
+            column_letter = get_column_letter(column_cells[0].column)
+            worksheet.column_dimensions[column_letter].width = adjusted_width
+
+        # Перенос текста для всех ячеек
+        for row in worksheet.iter_rows():
+            for cell in row:
+                cell.alignment = Alignment(wrap_text=True)
 
     # Создание InputFile с использованием пути к файлу
     input_file = FSInputFile(file_name)
