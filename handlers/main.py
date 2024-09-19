@@ -188,14 +188,15 @@ async def add_question3(message: types.Message, state: FSMContext, session: Asyn
             full_name = message.from_user.full_name
             username_ = message.from_user.username
             user_link = f"<a href='tg://user?id={user_id}'>{full_name}</a>"
+            user_link2 = f"<a href='tg://user?id={user_id}'>Ссылка на пользователя</a>"
 
             # Форматирование данных для отправки администратору
             formatted_data = (
                 f"<b>Новый запрос на курс:</b>\n"
                 f"✅Сообщение от:\n"
                 f"username пользователя:\n@{username_}\n"
-                f"Ссылка на пользователя:\n{user_link}\n"
-                f"✅1.Проблема, которую я хочу решить — ...\n{data.get('question1')}\n"
+                f"{user_link2}:\n{user_link}\n"
+                f"✅1.Проблема, которую я хочу решить — \n{data.get('question1')}\n"
                 f"✅2.Как проявляется твоя проблема в мыслях, чувствах, ощущениях, поведении?\n{data.get('question2')}\n"
                 f"✅3.Результат, которого я хочу достичь — ...\n{data.get('question3')}\n"
             )
@@ -263,6 +264,7 @@ async def add_sending_mail_information(message: types.Message, state: FSMContext
             full_name = message.from_user.full_name
             username_ = message.from_user.username
             user_link = f"<a href='tg://user?id={user_id}'>{full_name}</a>"
+            user_link2 = f"<a href='tg://user?id={user_id}'>Ссылка на пользователя</a>"
 
             # Форматирование данных для отправки администратору
             formatted_data = (
@@ -270,7 +272,7 @@ async def add_sending_mail_information(message: types.Message, state: FSMContext
                 f"Не пришел код.\n"
                 f"✅Сообщение от:\n"
                 f"username пользователя:\n@{username_}\n"
-                f"Ссылка на пользователя:\n{user_link}\n"
+                f"{user_link2}:\n{user_link}\n"
                 f"✅Адрес электронной почты, который был указан при покупке:\n{data.get('sending_mail')}\n"
             )
 
@@ -337,6 +339,7 @@ async def get_answer_problem_not_solved(callback: types.CallbackQuery, bot: Bot,
     full_name = callback.from_user.full_name
     username_ = callback.from_user.username
     user_link = f"<a href='tg://user?id={user_id}'>{full_name}</a>"
+    user_link2 = f"<a href='tg://user?id={user_id}'>Ссылка на пользователя</a>"
 
     # Форматирование данных для отправки администратору
     formatted_data = (
@@ -344,7 +347,7 @@ async def get_answer_problem_not_solved(callback: types.CallbackQuery, bot: Bot,
         f"Мне пришел код, но он не работает.\n"
         f"✅Сообщение от:\n"
         f"username пользователя:\n@{username_}\n"
-        f"Ссылка на пользователя:\n{user_link}\n"
+        f"{user_link2}:\n{user_link}\n"
     )
 
     # Отправка сообщения администратору
@@ -461,6 +464,7 @@ async def add_sending_mail_information_log(message: types.Message, state: FSMCon
             full_name = message.from_user.full_name
             username_ = message.from_user.username
             user_link = f"<a href='tg://user?id={user_id}'>{full_name}</a>"
+            user_link2 = f"<a href='tg://user?id={user_id}'>Ссылка на пользователя</a>"
 
             # Форматирование данных для отправки администратору
             formatted_data = (
@@ -468,7 +472,7 @@ async def add_sending_mail_information_log(message: types.Message, state: FSMCon
                 f"Не могу войти в аккаунт.\n"
                 f"✅Сообщение от:\n"
                 f"username пользователя:\n@{username_}\n"
-                f"Ссылка на пользователя:\n{user_link}\n"
+                f"{user_link2}:\n{user_link}\n"
                 f"✅Адрес электронной почты, который был указан при регистрации:\n{data.get('log_sending_mail')}\n"
             )
 
@@ -547,6 +551,7 @@ async def add_new_question_information(message: types.Message, state: FSMContext
             full_name = message.from_user.full_name
             username_ = message.from_user.username
             user_link = f"<a href='tg://user?id={user_id}'>{full_name}</a>"
+            user_link2 = f"<a href='tg://user?id={user_id}'>Ссылка на пользователя</a>"
 
             # Форматирование данных для отправки администратору
             formatted_data = (
@@ -554,7 +559,7 @@ async def add_new_question_information(message: types.Message, state: FSMContext
                 f"В списке нет моего вопроса.\n"
                 f"✅Сообщение от:\n"
                 f"username пользователя:\n@{username_}\n"
-                f"Ссылка на пользователя:\n{user_link}\n"
+                f"{user_link2}:\n{user_link}\n"
                 f"✅Текс сообщения от пользователя:\n{data.get('new_question')}\n"
             )
 
